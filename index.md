@@ -90,6 +90,11 @@ Die Dokumentation folgt der App-Struktur von BC28. Ausgearbeitete Kapitel zeigen
 ### 18. Migration & Upgrade
 🚧 in Vorbereitung
 
+### 19. [FAQ — Ausgewählte Fragen](19-faq/)
+&nbsp;&nbsp;├─ [Rabatt vs. Skonto](19-faq/fachkonzepte/)
+&nbsp;&nbsp;├─ [Methodik & Quellen](19-faq/methodik-quellen/)
+&nbsp;&nbsp;└─ [Jekyll-Struktur](19-faq/jekyll-struktur/)
+
 ## Quellen
 
 - [Microsoft Learn — Business Central](https://learn.microsoft.com/dynamics365/business-central/)
