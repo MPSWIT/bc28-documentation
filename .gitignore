@@ -1,0 +1,15 @@
+# Temporary files
+*.tmp
+*.swp
+*.bak
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+output/
+*.app
+*.zip
+
+# IDE
+.vscode/
+.idea/
