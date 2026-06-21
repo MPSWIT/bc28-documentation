@@ -630,9 +630,555 @@ Offizielle BC-Überschrift: **Gutschriften als Storno mark.**
 
 ---
 
-## 4.9 Integrationsereignisse (für Entwickler)
+## 4.9 Kontenplan & Sachkonten (Tabelle 15)
 
-Tabelle 98 stellt folgende `[IntegrationEvent]`-Prozeduren bereit:
+> **Tabelle 15:** `GLAccount.Table.al`
+> **Namensraum:** `Microsoft.Finance.GeneralLedger.Account`
+> **Seiten:** `ChartofAccounts.Page.al`, `GLAccountCard.Page.al`
+
+Der **Kontenplan** ist das Fundament der Finanzbuchhaltung. Jedes Sachkonto (`G/L Account`) besitzt eine eindeutige Nummer, eine Bilanz/GuV-Klassifikation, Buchungsgruppen-Zuweisungen und einen Kontosperrstatus. Die Hierarchie wird über Einrückung (`Indentation`) abgebildet.
+
+### Gliederung: Bilanz vs. GuV
+
+```al
+field(4; "Income/Balance"; Enum "G/L Account Income/Balance")
+{
+    Caption = 'Income/Balance';
+}
+```
+Optionen: `Income Statement` (GuV) | `Balance Sheet` (Bilanz)
+
+> ⚠️ Entscheidend für den Jahresabschluss: `CloseIncomeStatement.Report.al` bucht den Saldo aller GuV-Konten auf das Bilanzkonto für `Retained Earnings`.
+
+### Buchungsgruppen-Zuweisung
+
+Jedes Konto muss einer **Gen. Business Posting Group** und **Gen. Product Posting Group** zugewiesen werden:
+
+```al
+field(13; "Gen. Bus. Posting Group"; Code[20])
+{
+    TableRelation = "Gen. Business Posting Group";
+    NotBlank = true;
+}
+field(14; "Gen. Prod. Posting Group"; Code[20])
+{
+    TableRelation = "Gen. Product Posting Group";
+    NotBlank = true;
+}
+```
+
+Diese beiden Felder steuern, welches **Gegenkonto** bei Buchungen verwendet wird — festgelegt in `General Posting Setup` (Tabelle 252).
+
+**Beispiel 1 — Kontenplan eines Produktionsbetriebes anlegen:**
+> Ein mittelständischer Maschinenbauer richtet seinen Kontenplan nach dem SKR04 ein. Aktivkonten (0–3), Passivkonten (4–6), GuV-Konten (7–9).
+> ➜ `Income/Balance = Balance Sheet` für Konto 0800 (Fuhrpark), `Income/Balance = Income Statement` für Konto 8400 (Erlöse). `Gen. Bus. Posting Group = INLAND`, `Gen. Prod. Posting Group = MASCHINEN`.
+> **Ergebnis:** Jede Rechnungsbuchung findet über die Buchungsmatrix ihr korrektes Gegenkonto. Der Jahresabschlussbericht gruppiert Bilanz- und GuV-Positionen automatisch.
+
+**Beispiel 2 — Ein Automobilzulieferer muss Kapazitätskonten sperren:**
+> Die Produktion wurde vorübergehend stillgelegt. Der Buchhalter sperrt die entsprechenden Aufwandskonten.
+> ➜ `Blocked = All` auf Konto 4300 (Fremdleistungen).
+> **Ergebnis:** Keine Buchung auf Konto 4300 möglich. Die `CheckGLAccountIsBlocked()`-Prüfung in `GenJnlCheckLine.Codeunit.al` schlägt mit Fehler _„Sachkonto 4300 ist gesperrt."_ fehl.
+
+**Beispiel 3 — Kontenplan-Erweiterung für IFRS:**
+> Die Muttergesellschaft verlangt IFRS-Reporting. Der Konzernbuchhalter erweitert den Kontenplan um IFRS-spezifische Konten (z.B. Leasingverbindlichkeiten).
+> ➜ Neue Konten mit `Gen. Bus. Posting Group = KONZERN` und `Gen. Prod. Posting Group = IFRS` anlegen.
+> **Ergebnis:** Über die separate Buchungsgruppe können IFRS-Buchungen von HGB-Buchungen getrennt ausgewertet werden.
+
+**Querverweis:** → [Kap. 5 Vertrieb]({{ '/05-sales-marketing/' | relative_url }}) — wie Debitorenbuchungsgruppen die Fibu-Konten steuern
+
+---
+
+## 4.10 Buchungsgruppen — Die Buchungsmatrix
+
+> **Kern-Tabellen:** `GenBusinessPostingGroup.Table.al` (110), `GenProductPostingGroup.Table.al` (111), `GeneralPostingSetup.Table.al` (252)
+> **Namensraum:** `Microsoft.Finance.GeneralLedger.Setup`
+
+Die Buchungsmatrix ist das zentrale Routing-System für jede Buchung. Sie ordnet jeder Kombination aus **Geschäftsbuchungsgruppe** (Debitor/Kreditor-Typ) und **Produktbuchungsgruppe** (Artikel-Typ) die korrekten Sachkonten zu.
+
+### Wie die Buchungsmatrix arbeitet
+
+```
+Gen. Business Posting Group  ─┐
+  (z.B. INLAND, EU, DRITT)    ├──→ Gen. Posting Setup (252) ──→ Sachkonten
+Gen. Product Posting Group   ─┘     (Umsatzerlöse, COGS, Bestand, ...)
+```
+
+In `General Posting Setup` sind für jede Kombination folgende Konten hinterlegt:
+
+| Feld | Debitoren-Seite (Verkauf) | Kreditoren-Seite (Einkauf) |
+|---|---|---|
+| `Sales Account` | Umsatzerlöse | — |
+| `Purchase Account` | — | Aufwand/Einkauf |
+| `Inventory Adjmt. Account` | Bestandsveränderung | Bestandsveränderung |
+| `COGS Account` | Wareneinsatz | — |
+| `Direct Cost Applied Account` | Verrechnete Einzelkosten | Verrechnete Einzelkosten |
+| `Overhead Applied Account` | Verrechnete Gemeinkosten | Verrechnete Gemeinkosten |
+
+### MwSt-Buchungsmatrix
+
+Parallel dazu existiert `VAT Posting Setup` (Tabelle 325) für die MwSt-Kontenfindung:
+```
+VAT Bus. Posting Group  ─┐
+  (z.B. INLAND, EU)       ├──→ VAT Posting Setup (325) ──→ MwSt-Konten
+VAT Prod. Posting Group  ─┘     (VAT%, Vorsteuer, Umsatzsteuer, ...)
+```
+
+**Beispiel 1 — Ein Unternehmen verkauft an inländische, EU- und Drittlandkunden:**
+> Das Unternehmen benötigt drei Geschäftsbuchungsgruppen:
+> ➜ `Gen. Bus. Posting Group = INLAND`, `Gen. Bus. Posting Group = EU`, `Gen. Bus. Posting Group = DRITT`.
+> Für jede Gruppe wird das `Gen. Posting Setup` hinterlegt — z.B. `Sales Account` für DRITT auf Konto 8330 (steuerfreie Ausfuhrlieferungen).
+> **Ergebnis:** Bei einer Rechnung an einen Schweizer Kunden (DRITT) bucht das System automatisch auf Konto 8330 — ohne manuelle Kontierung.
+
+**Beispiel 2 — Ein neues Produktsortiment erfordert getrennte Erlöskonten:**
+> Das Unternehmen erweitert sein Sortiment um Dienstleistungen. Der Controller möchte Dienstleistungserlöse getrennt von Warenverkäufen sehen.
+> ➜ Neue `Gen. Prod. Posting Group = DIENSTLEISTUNG` anlegen. Im `Gen. Posting Setup` für Kombination `INLAND/DIENSTLEISTUNG` das `Sales Account = 8401` (Erlöse Dienstleistungen 19% USt).
+> **Ergebnis:** Verkaufsrechnungen werden automatisch auf das richtige Erlöskonto gebucht. Die GuV zeigt Waren und Dienstleistungen getrennt.
+
+**Beispiel 3 — Copy-Funktion für neue Buchungsgruppe:**
+> Das Unternehmen eröffnet eine Niederlassung in Österreich. Die Buchungsmatrix für INLAND existiert bereits, nun soll sie für `Gen. Bus. Posting Group = AT-INLAND` kopiert werden.
+> ➜ `Copy General Posting Setup`-Bericht ausführen — Quelle: `INLAND`, Ziel: `AT-INLAND`.
+> **Ergebnis:** Alle 25+ Kontenzeilen werden in einem Schritt kopiert. Nur abweichende Konten (z.B. österreichisches Erlöskonto) müssen manuell angepasst werden.
+
+**Querverweise:**
+- → [Kap. 6 Einkauf]({{ '/06-purchasing/' | relative_url }}) — Kreditorenbuchungsgruppen und Einkaufskonten
+- → [Kap. 7 Lager]({{ '/07-inventory/' | relative_url }}) — Inventur- und Bestandsbuchungen und ihre Fibu-Auswirkungen
+
+---
+
+## 4.11 MwSt & Umsatzsteuer
+
+> **Kern-Tabellen:** `VATPostingSetup.Table.al` (325), `VATEntry.Table.al` (254), `VATStatement.Table.al`
+> **Namensräume:** `Microsoft.Finance.VAT.Calculation`, `Microsoft.Finance.VAT.Reporting`, `Microsoft.Finance.VAT.Setup`
+
+Das MwSt-System in BC28 ist mehrschichtig: Einrichtung (VAT Posting Setup) → Berechnung (VAT Calculation) → Buchung (VAT Entries) → Meldung (VAT Statement).
+
+### VAT Posting Setup (325)
+
+```al
+field("VAT Bus. Posting Group"; Code[20])       // z.B. INLAND, EU, DRITT
+field("VAT Prod. Posting Group"; Code[20])       // z.B. NORMAL, ERMÄSSIGT, STEUERFREI
+field("VAT %"; Decimal)                           // z.B. 19.00
+field("Sales VAT Account"; Code[20])              // Umsatzsteuerkonto
+field("Purchase VAT Account"; Code[20])           // Vorsteuerkonto
+field("VAT Identifier"; Code[20])                 // MwSt-Schlüssel für Meldung
+```
+
+### MwSt-Abrechnung
+
+`CalcandPostVATSettlement.Report.al` berechnet den MwSt-Saldo und bucht die Zahllast/Vorsteuerüberhang auf das entsprechende Konto.
+
+**Beispiel 1 — Standard-Konfiguration für Deutschland:**
+> Das Unternehmen benötigt 3 MwSt-Sätze: 19%, 7%, steuerfrei (0%).
+> ➜ `VAT Prod. Posting Group = NORMAL` (19%), `ERMÄSSIGT` (7%), `STFREI` (0%). Für `VAT Bus. Posting Group = INLAND` werden alle drei Sätze im `VAT Posting Setup` hinterlegt.
+> **Ergebnis:** Bei Buchung einer Rechnung über 1.190 € (1.000 + 190 USt) landen 190 € auf dem Konto _Umsatzsteuer 19%_ (1776). Die MwSt-Meldung erfasst diesen Betrag automatisch.
+
+**Beispiel 2 — Innergemeinschaftliche Lieferung:**
+> Das Unternehmen liefert eine Maschine nach Frankreich (EU). Die Rechnung muss ohne MwSt ausgestellt werden (USt-ID-Prüfung).
+> ➜ `VAT Bus. Posting Group = EU`, `VAT Prod. Posting Group = NORMAL`. Im `VAT Posting Setup` wird `VAT % = 0`, `VAT Identifier = 41` (innergem. Lieferung) gesetzt.
+> **Ergebnis:** Das System prüft automatisch die USt-ID des Kunden (`VATRegistrationNoCheck.Report.al`). Bei gültiger ID erscheint keine MwSt auf der Rechnung, aber die _Zusammenfassende Meldung_ erfasst den Umsatz.
+
+**Beispiel 3 — IST-Versteuerung mit unrealisierter MwSt:**
+> Das Unternehmen hat `Unrealized VAT = Ja` gesetzt (siehe §4.3). Das `VAT Posting Setup` benötigt für die betroffenen Kombinationen `Unrealized VAT Type = Percentage`.
+> ➜ Im `VAT Posting Setup`: `Unrealized VAT Type = Percentage` für `INLAND/NORMAL`.
+> **Ergebnis:** Die MwSt wird erst bei Zahlungseingang realisiert und gemeldet — nicht schon bei Rechnungsstellung. Vorteil für die Liquidität, mehr Aufwand in der Buchhaltung.
+
+**Querverweis:** → [Kap. 4.1 §4.3 MwSt-Felder der Fibu-Einrichtung](#43-mehrwertsteuer) — `Unrealized VAT`, `VAT Reporting Date`, `Control VAT Period` in Tabelle 98
+
+---
+
+## 4.12 Fibu-Buchungsjournale
+
+> **Kern-Tabellen:** `GenJournalTemplate.Table.al` (80), `GenJournalBatch.Table.al` (81), `GenJournalLine.Table.al` (82)
+> **Namensraum:** `Microsoft.Finance.GeneralLedger.Journal`
+
+Buchungsjournale sind der tägliche Arbeitsplatz für Fibu-Buchungen. Ein **Template** (z.B. ALLGEMEIN) enthält **Batches** (z.B. JANUAR2026), die wiederum **Zeilen** enthalten.
+
+```al
+// GenJournalLine: Kern-Felder
+field("Account Type"; Option)         // G/L Account, Customer, Vendor, Bank Account, Fixed Asset, IC Partner
+field("Account No."; Code[20])        // Kontennummer
+field("Posting Date"; Date)
+field("Document No."; Code[20])
+field("Amount"; Decimal)
+field("Bal. Account Type"; Option)    // Gegenkonto-Typ
+field("Bal. Account No."; Code[20])   // Gegenkonto
+```
+
+Die Buchungslogik ist auf mehrere Codeunits verteilt:
+- `GenJnlCheckLine.Codeunit.al` — Validierung jeder Zeile
+- `GenJnlPostLine.Codeunit.al` — Einzelzeilenbuchung  
+- `GenJnlPostBatch.Codeunit.al` — Stapelbuchung
+- `GenJnlPostviaJobQueue.Codeunit.al` — Hintergrundbuchung
+
+**Beispiel 1 — Buchhalter bucht monatliche Mietkosten:**
+> Jeden Monatsersten wird die Büromiete fällig: 2.000 € + 380 € MwSt.
+> ➜ `Account Type = G/L Account`, `Account No. = 4210` (Mietaufwand), `Amount = 2.000`, `Bal. Account Type = G/L Account`, `Bal. Account No. = 1600` (Verbindlichkeiten). MwSt über das Feld `VAT Prod. Posting Group` automatisch.
+> **Ergebnis:** Soll an Mietaufwand 2.000 € / Haben an Verbindlichkeiten 2.380 € / Haben an Vorsteuer 380 €. Die Zeilen-Validierung (`GenJnlCheckLine`) prüft, ob Konto 4210 existiert und nicht gesperrt ist.
+
+**Beispiel 2 — Wiederkehrende Buchung als Vorlage speichern:**
+> Der Buchhalter bucht jeden Monat dieselben 5 Standardbuchungen (Miete, Leasing, Versicherung, Telefon, Reinigung).
+> ➜ `Gen. Journal Template = ALLGEMEIN`, alle 5 Zeilen erfassen und über `Save as Standard Gen. Journal` speichern.
+> **Ergebnis:** Im nächsten Monat wird der Standard-Journal geladen, nur die Belegnummern werden angepasst — 80% Zeiteinsparung.
+
+**Beispiel 3 — IC-Partner-Buchung mit automatischer Gegenbuchung:**
+> Die Holding (DE) verbucht eine Verrechnung an die Tochter (AT) über 50.000 € für Management Fees.
+> ➜ `Account Type = IC Partner`, `Account No. = AT-TOCHTER`, `IC Partner Bal. Account No. = 4800` (Erlöse aus Beteiligung).
+> **Ergebnis:** Das System erzeugt automatisch einen IC-Outbox-Eintrag für AT. Sobald die AT-Tochter die IC-Inbox verarbeitet, entsteht dort die korrespondierende Gegenbuchung — ohne doppelte Erfassung.
+
+**Querverweise:**
+→ [Kap. 4.14 Intercompany](#414-intercompany)
+→ [Kap. 4.7 Aufgabenwarteschlange](#47-aufgabenwarteschlange--hintergrundbuchung) — `Post with Job Queue`
+
+---
+
+## 4.13 Debitoren & Kreditoren (Receivables & Payables)
+
+> **Namensraum:** `Microsoft.Finance.ReceivablesPayables`
+> **Kern-Tabellen:** `CustLedgerEntry.Table.al` (21), `VendLedgerEntry.Table.al` (25), `DetailedCustLedgEntry.Table.al` (379)
+
+Die OP-Verwaltung (Offene Posten) verbindet Fakturierung mit Zahlung. Jede gebuchte Rechnung erzeugt Posten in `CustLedgerEntry` (Debitor) oder `VendLedgerEntry` (Kreditor) sowie den dazugehörigen `Detailed...LedgEntry` (Detailposten).
+
+### Zahlungsausgleich
+
+Der Ausgleich von Zahlungen mit offenen Rechnungen erfolgt über `GenJnlApply.Codeunit.al`. Pro Ausgleichszeile entsteht ein `CustLedgerEntry` vom Typ `Application`.
+
+**Beispiel 1 — Ein Kunde zahlt per Bank und der Ausgleich läuft automatisch:**
+> Kunde Müller GmbH zahlt 4.760 € auf zwei offene Rechnungen (2.380 € + 2.380 €). Die Zahlung wird über den Kontoauszug (`Bank Acc. Reconciliation`) importiert.
+> ➜ `Account Type = Customer`, `Account No. = 10000`, `Amount = -4.760`, `Applies-to Doc No. = RE001, RE002`
+> **Ergebnis:** Das System gleicht automatisch aus. Beide Rechnungen sind geschlossen. Kein manuelles OP-Abgleichen nötig.
+
+**Beispiel 2 — Teilzahlung mit Skonto:**
+> Kunde zahlt 1.166,20 € auf eine Rechnung über 1.190 € brutto — 2% Skonto (23,80 €) abgezogen.
+> ➜ Zahlungseingang 1.166,20 €, Skontobetrag 23,80 €, `Pmt. Disc. Excl. VAT = Ja` → nur vom Netto skontiert.
+> **Ergebnis:** Der Debitorenposten ist ausgeglichen, das Skontokonto und die MwSt werden korrekt korrigiert (s. §4.4). Der Kunde erhält keine Mahnung.
+
+**Beispiel 3 — OP-Liste und Mahnung:**
+> Das Unternehmen verschickt monatlich Mahnbriefe an säumige Zahler. Grundlage ist die OP-Liste pro Debitor.
+> ➜ Bericht `Customer Statement` zeigt alle offenen Posten. `Reminder`-Codeunit erzeugt Mahnstufen (1, 2, 3) mit Mahngebühren.
+> **Ergebnis:** Automatisierte Mahnläufe. Jede Mahnung erzeugt einen neuen Posten (`Reminder/Finance Charge Entry`).
+
+**Querverweise:**
+→ [Kap. 5 Vertrieb]({{ '/05-sales-marketing/' | relative_url }}) — Debitorenstamm, `Customer Posting Group`, `Customer`-Tabelle  
+→ [Kap. 6 Einkauf]({{ '/06-purchasing/' | relative_url }}) — Kreditorenstamm, `Vendor Posting Group`, `Vendor`-Tabelle
+
+---
+
+## 4.14 Bank & Zahlungsverkehr
+
+> **Namensräume:** `Microsoft.Bank.*`, `Microsoft.CashFlow.*`
+> **Kern-Tabellen:** `BankAccount.Table.al` (270), `BankAccReconciliation.Table.al` (273), `BankAccReconLine.Table.al` (274)
+
+### SEPA-Export & Zahlungsdateien
+
+BC28 unterstützt SEPA Credit Transfers (Überweisungen) und Direct Debits (Lastschriften) über den `Payment Journal`.
+
+**Beispiel 1 — Zahllauf für 50 Kreditorenrechnungen:**
+> Das Unternehmen bezahlt jeden Dienstag alle fälligen Kreditorenrechnungen per SEPA-Überweisung.
+> ➜ `Payment Journal` → Kreditorenrechnungen auswählen (`Suggest Vendor Payments`) → `Export SEPA Payment File`.
+> **Ergebnis:** Eine XML-Datei (pain.001) wird erzeugt und an die Bank übermittelt. 50 Einzelüberweisungen in einer Sammeldatei.
+
+**Beispiel 2 — Bankkontoauszug importieren und abstimmen:**
+> Der Bankkontoauszug kommt als CAMT.053-Datei. Das Unternehmen importiert ihn und gleicht ihn mit den gebuchten Posten ab.
+> ➜ `Bank Acc. Reconciliation` → `Import Bank Statement` → CAMT.053 auswählen.
+> **Ergebnis:** Gebuchte Posten werden automatisch zugeordnet (`Match`). Differenzen (z.B. Bankgebühren, Zinsen) werden als neue Fibu-Buchungen erfasst — kompletter Bankabstimmungs-Workflow.
+
+**Beispiel 3 — SEPA-Lastschrift für 200 Kunden:**
+> Das Unternehmen zieht monatlich per SEPA-Basislastschrift bei 200 Kunden ein.
+> ➜ `Payment Journal` mit `Gen. Journal Template = ZAHLUNG`, `Bal. Account Type = Bank Account`, `Account Type = Customer`.
+> **Ergebnis:** Eine SEPA Direct Debit XML-Datei (pain.008) entsteht. Bei Buchung werden 200 Debitorenposten automatisch ausgeglichen. Keine manuelle Zahlungszuordnung.
+
+**Querverweis:** → [Kap. 4.1 §4.7 Aufgabenwarteschlange](#47-aufgabenwarteschlange--hintergrundbuchung)
+
+---
+
+## 4.15 Anlagen (Fixed Assets)
+
+> **Namensräume:** `Microsoft.FixedAssets.*`
+> **Kern-Tabellen:** `FixedAsset.Table.al` (5600), `FADepreciationBook.Table.al` (5612), `FALedgerEntry.Table.al` (5614)
+
+Anlagen (Gebäude, Maschinen, Fuhrpark) werden über Anlagenkarten verwaltet, linear oder degressiv abgeschrieben. Jede Abschreibungsbuchung erzeugt einen Fibu-Posten.
+
+```al
+// FADepreciationBook: AfA-Parameter
+field("Depreciation Method"; Option)     // Straight-Line, Declining-Balance, ...
+field("Depreciation %"; Decimal)
+field("No. of Depreciation Years"; Integer)
+```
+
+**Beispiel 1 — Eine neue CNC-Maschine wird aktiviert und abgeschrieben:**
+> Das Unternehmen kauft eine CNC-Maschine für 120.000 € netto, Nutzungsdauer 10 Jahre, lineare AfA.
+> ➜ `Fixed Asset Card`: Anschaffungskosten = 120.000 €, `Depreciation Method = Straight-Line`, `No. of Depreciation Years = 10`.
+> **Ergebnis:** Monatliche AfA-Buchung: 1.000 € Soll an AfA-Konto (4000), Haben an Anlagekonto (0700). Der `FALedgerEntry` enthält den Restbuchwert.
+
+**Beispiel 2 — Vorzeitiger Abgang einer Anlage:**
+> Ein Firmenwagen (Buchwert 15.000 €) wird nach 3 Jahren für 12.000 € verkauft — Verlust 3.000 €.
+> ➜ Anlagenverkauf über `FA Journal`. Buchung: Bank 12.000 € / Erlös aus Anlageabgang 12.000 €, Restbuchwert 15.000 € / Anlageabgang 15.000 €, Verlust 3.000 €.
+> **Ergebnis:** Das Anlagekonto wird vollständig aufgelöst. GuV-wirksamer Verlust von 3.000 €.
+
+**Beispiel 3 — Geringwertige Wirtschaftsgüter (GWG):**
+> Das Unternehmen kauft einen Bürostuhl für 450 € netto (unter 800 € Grenze) und schreibt ihn sofort voll ab.
+> ➜ `Depreciation Method = Straight-Line`, `No. of Depreciation Years = 1` oder über das GWG-Profil: Sofortabschreibung im 1. Jahr.
+> **Ergebnis:** 450 € werden im Anschaffungsjahr voll abgeschrieben. Keine Verteilung über mehrere Jahre.
+
+**Querverweise:**
+→ [Kap. 6 Einkauf]({{ '/06-purchasing/' | relative_url }}) — Anlagen aus Einkaufsbestellung aktivieren  
+→ [Kap. 7 Lager]({{ '/07-inventory/' | relative_url }}) — Bestandsbewertung vs. Anlagenbewertung
+
+---
+
+## 4.16 Währung & Wechselkurse
+
+> **Namensraum:** `Microsoft.Finance.Currency`
+> **Kern-Tabellen:** `Currency.Table.al` (4), `CurrencyExchangeRate.Table.al` (330)
+
+Fremdwährungsbuchungen erfordern Wechselkurse. BC28 bewertet offene Posten periodisch neu und bucht Kursdifferenzen.
+
+```al
+// ExchRateAdjmtReg: Kursanpassungs-Register
+field("Currency Code"; Code[10])
+field("Starting Date"; Date)
+field("Ending Date"; Date)
+field("Adjustment Date"; Date)
+```
+
+**Beispiel 1 — EUR-basierte Firma kauft in USD ein:**
+> Das Unternehmen kauft Waren für 10.000 USD bei einem Kurs von 1,10 USD/EUR (= 9.090,91 €). Bei Zahlung (30 Tage später) beträgt der Kurs 1,12 USD/EUR (= 8.928,57 €).
+> ➜ Kursgewinn: 162,34 €.
+> **Ergebnis:** Bei Zahlung wird die Kursdifferenz automatisch auf das `Realized Gain`-Konto gebucht. Der Bericht `Adjust Exchange Rates` (Wechselkurse anpassen) berücksichtigt das.
+
+**Beispiel 2 — Periodische Kursanpassung für OP-Liste:**
+> Die USD-Debitorenposten (offene Kundenforderungen) werden zum Monatsultimo mit dem neuen Kurs bewertet.
+> ➜ Bericht "`Adjust Exchange Rates`" ausführen. Parameter: `Adjustment Date = 30.06.2026`, `Currency Code = USD`.
+> **Ergebnis:** Alle offenen USD-Posten erhalten eine Kursdifferenz-Buchung. Der unrealisierte Gewinn/Verlust wird auf das entsprechende Konto gebucht.
+
+**Beispiel 3 — Wechselkurs automatisch über Service aktualisieren:**
+> Das Unternehmen hat `CurrExchRateUpdateSetup` für die EZB konfiguriert.
+> ➜ `Update Currency Exchange Rates`-Codeunit läuft täglich über die Aufgabenwarteschlange und holt die aktuellen EZB-Referenzkurse.
+> **Ergebnis:** Die Wechselkurstabelle ist stets aktuell. Kein manuelles Einpflegen der Kurse.
+
+---
+
+## 4.17 Finanzberichte & Analyse
+
+> **Namensraum:** `Microsoft.Finance.FinancialReports`
+> **Kern-Tabellen:** `AccountScheduleName.Table.al` (91), `AccountScheduleLine.Table.al` (92), `ColumnLayout.Table.al` (93)
+
+Account Schedules sind das zentrale Reporting-Tool. Zeilen (`AccountScheduleLine`) definieren WAS angezeigt wird, Spalten (`ColumnLayout`) definieren WIE (Periode, Vergleichszeitraum).
+
+```al
+// AccountScheduleLine: Zeilendefinition
+field("Row No."; Integer)              // Zeilennummer
+field("Description"; Text[100])         // Zeilenbeschreibung
+field("Totaling Type"; Option)          // Posting Accounts, Formula, Net Change, ...
+field("Totaling"; Text[250])            // Konten-Filter oder Formel
+field("Show"; Option)                   // Ja/Nein, nur bei Betrag <> 0, ...
+```
+
+**Beispiel 1 — Eine einfache Bilanz aufbauen:**
+> Das Unternehmen benötigt eine monatliche Bilanz (Aktiva + Passiva).
+> ➜ Zeilen: `Row No. 10 = Sachanlagen (Konten 0100..0799)`, `Row No. 20 = Vorräte (Konten 1000..1999)`, `Row No. 30 = Summe Aktiva (Formel: 10+20)`. Spalten: `Column 1 = Aktueller Monat (Period), Column 2 = Vorjahresmonat (Comparison Period)`.
+> **Ergebnis:** Der Bericht `Bilanz` zeigt alle Aktiva, Vorräte und Summe — mit Vorjahresvergleich.
+
+**Beispiel 2 — GuV nach Kostenstellen:**
+> Der Controller möchte eine GuV getrennt nach Kostenstellen sehen.
+> ➜ `Dimension Perspective` für Kostenstelle anlegen (z.B. KST-VERTRIEB, KST-PRODUKTION). Die `AccountScheduleLine` referenziert die Dimension Perspective.
+> **Ergebnis:** Eine GuV pro Kostenstelle — aus einer einzigen Account Schedule-Definition.
+
+**Beispiel 3 — Monatliche Cashflow-Rechnung:**
+> Der Finanzleiter möchte den Cashflow der letzten 12 Monate rollierend darstellen.
+> ➜ `ColumnLayout` mit `Column Type = Formula` und `Comparison Period Formula = -1M..-12M`. In der Zeile: Konten der liquiden Mittel (1000..1299).
+> **Ergebnis:** Der Bericht "Cashflow Statement" zeigt die monatliche Entwicklung — automatisch rollierend ohne manuelle Anpassung.
+
+**Querverweis:** → [Kap. 4.1 Fibu-Einrichtung](#4-finanzen--fibu-einrichtung) — Felder `Fin. Rep. for Balance Sheet`, `Fin. Rep. for Income Stmt` in Tabelle 98
+
+---
+
+## 4.18 Budget
+
+> **Namensraum:** `Microsoft.Finance.GeneralLedger.Budget`
+> **Kern-Tabellen:** `GLBudgetName.Table.al` (89), `GLBudgetEntry.Table.al` (90)
+
+Budgeteinträge werden pro Konto und Periode erfasst und mit IST-Werten in Account Schedules verglichen.
+
+**Beispiel 1 — Jahresbudget 2026 für den Vertriebsbereich:**
+> Der Vertriebsleiter plant 600.000 € Umsatz (Konto 8400) für 2026 — gleichmäßig verteilt auf 12 Monate.
+> ➜ `Budget Name = UMSATZ2026`, `Budget Entry`: Konto 8400, Zeilen pro Monat à 50.000 €.
+> **Ergebnis:** In der Account Schedule kann eine Spalte mit `Column Type = Budget` die IST- mit den BUDGET-Werten monatlich vergleichen.
+
+**Beispiel 2 — Budget aus Excel importieren:**
+> Der Controller hat das Budget in Excel erstellt und möchte es direkt nach BC importieren.
+> ➜ Bericht `Import Budget from Excel` mit definierter Excel-Vorlage (`FinReportExcelTemplate`).
+> **Ergebnis:** 500 Budgetzeilen werden in einem Rutsch importiert — keine manuelle Erfassung.
+
+**Beispiel 3 — Budgetkontrolle mit Warnung:**
+> Das Unternehmen möchte beim Buchen einer Bestellung gewarnt werden, wenn das Budget überschritten wird.
+> ➜ `GLBudgetOpen.Codeunit.al` prüft bei Buchung: Budgetsumme vs. IST-Kosten. Bei Überschreitung: Warnung.
+> **Ergebnis:** Echtzeit-Budgetkontrolle bereits bei der Bestellerfassung — nicht erst am Monatsende.
+
+**Querverweis:** → [Kap. 6 Einkauf]({{ '/06-purchasing/' | relative_url }}) — Budgetkontrolle bei Bestellfreigabe
+
+---
+
+## 4.19 Konsolidierung
+
+> **Namensraum:** `Microsoft.Finance.Consolidation`
+> **Kern-Tabellen:** `ConsolidationSetup.Table.al` (96), `BusinessUnit.Table.al` (97), `ConsolidationAccount.Table.al` (95)
+
+Konsolidierung fasst mehrere Mandanten (Business Units) in einem Konsolidierungsmandanten zusammen — essenziell für Konzerne.
+
+**Beispiel 1 — Holding mit 3 Tochtergesellschaften konsolidieren:**
+> Die Holding (DE) konsolidiert ihre Töchter AT, CH, NL monatlich.
+> ➜ Jede Tochter als `Business Unit` anlegen, Konsolidierungskonten (`Consolidation Account`) aus dem Quellmandanten zuweisen.
+> **Ergebnis:** Der Bericht `Consolidate` überträgt die Salden aller Töchter in den Konsolidierungsmandanten. Die Konzernbilanz und -GuV entstehen automatisch.
+
+**Beispiel 2 — Währungsumrechnung für die Konsolidierung:**
+> Die CH-Tochter bucht in CHF, die Konzernmutter in EUR.
+> ➜ In der `Consolidation Setup` wird der CHF-zu-EUR-Wechselkurs hinterlegt. Die Konsolidierung rechnet alle CHF-Posten zu Stichtagskurs um.
+> **Ergebnis:** Konzernabschluss in EUR. Währungskursdifferenzen werden auf das `Currency Translation Adjustment`-Konto gebucht.
+
+**Beispiel 3 — Intercompany-Eliminierungen:**
+> Die DE-Holding hat Forderungen von 100.000 € gegen die AT-Tochter im Soll. Die AT-Tochter hat Verbindlichkeiten von 100.000 € gegen die DE-Holding im Haben.
+> ➜ `G/L Consolidation Eliminations`-Bericht bucht automatisch eine Eliminierungszeile: Soll Verbindlichkeiten 100.000 € / Haben Forderungen 100.000 €.
+> **Ergebnis:** Konzernbilanz ist frei von Intercompany-Salden.
+
+**Querverweis:** → [Kap. 4.14 Intercompany](#414-intercompany)
+
+---
+
+## 4.20 Abgrenzungen (Deferrals)
+
+> **Namensraum:** `Microsoft.Finance.Deferral`
+> **Kern-Tabellen:** `DeferralHeader.Table.al` (1700), `DeferralLine.Table.al` (1701)
+
+Abgrenzungen verteilen Aufwände oder Erträge über mehrere Perioden. Beispiel: Eine Jahresmiete (12.000 €) soll monatlich mit 1.000 € gebucht werden.
+
+```al
+field("Deferral %"; Decimal)             // z.B. 8.33 (=100%/12)
+field("Deferral Starting Date"; Date)
+field("Deferral Ending Date"; Date)
+field("No. of Periods"; Integer)
+```
+
+**Beispiel 1 — Jahresversicherung wird periodengerecht abgegrenzt:**
+> Das Unternehmen bezahlt am 01.01. eine Jahresversicherung über 6.000 €.
+> ➜ `Deferral Template = VERSICHERUNG`, 12 Monate, `Deferral % = 8.33`, `Deferral Starting Date = 01.01.2026`.
+> **Ergebnis:** Bei jeder Fibu-Buchung über 6.000 € an Versicherungsaufwand erzeugt das System zusätzlich 12 monatliche Abgrenzungszeilen: 500 € Soll VersAufwand / 500 € Haben ARA. Monatlich korrekt periodisiert.
+
+**Beispiel 2 — Vorauszahlung eines Kunden wird aufgelöst:**
+> Ein Kunde zahlt 24.000 € für einen 2-Jahres-Wartungsvertrag. Der Ertrag soll monatlich mit 1.000 € gebucht werden.
+> ➜ Deferral Line: 24 Monate, `Deferral % = 4.17`, `Deferral Starting Date = 01.01.2026`.
+> **Ergebnis:** Monatlich wird 1.000 € Ertrag aus der Abgrenzung aufgelöst. Die GuV zeigt monatlich den korrekten Service-Ertrag.
+
+**Beispiel 3 — Abgrenzungsvorlagen für Standard-Fälle:**
+> Das Unternehmen hat 5 Standard-Abgrenzungen (Versicherung, Miete, Wartung, Leasing, Lizenzen).
+> ➜ 5 `Deferral Templates` anlegen. Der Benutzer wählt nur noch die Vorlage aus — Startdatum und Prozentsatz werden automatisch gesetzt.
+> **Ergebnis:** Standardisierung und Fehlervermeidung — kein manuelles Berechnen der Prozentsätze.
+
+---
+
+## 4.21 Intercompany (IC-Partner)
+
+> **Namensraum:** `Microsoft.Finance.Intercompany`
+> **Kern-Tabellen:** `ICPartner.Table.al` (410), `ICInboxTransaction.Table.al` (420), `ICOutboxTransaction.Table.al` (421)
+
+Intercompany ermöglicht buchhalterische Transaktionen zwischen Mandanten eines Konzerns — automatische Gegenbuchung und IC-Bestellungen.
+
+**Beispiel 1 — Management Fees von Mutter an Tochter:**
+> Die DE-Holding (IC-Partner-Code: MUTTER) verrechnet monatlich 50.000 € Management Fees an die AT-Tochter (IC-Partner-Code: TOCHTER).
+> ➜ Fibu-Buchung: Soll IC-Partner TOCHTER / Haben Erlöse 4800. Der `ICOutboxTransaction` wird automatisch erzeugt.
+> **Ergebnis:** AT kann die `ICInboxTransaction` abrufen und buchen — Soll Aufwand 6100 / Haben IC-Partner MUTTER. Vollautomatische Gegenbuchung.
+
+**Beispiel 2 — IC-Bestellung mit automatischer Gegenverkauf:**
+> Die DE-Mutter bestellt bei der AT-Tochter 100 Einheiten eines Artikels.
+> ➜ IC-Verkaufsauftrag in DE erfassen. Das System erzeugt automatisch einen IC-Einkaufsauftrag in AT.
+> **Ergebnis:** Einkäufer und Verkäufer müssen nur EINEN Beleg im System erfassen — die Gegenbuchung entsteht automatisch.
+
+**Beispiel 3 — IC-Transaktionen mit Dimensionen:**
+> Der Konzern verwendet die Dimension PROJECT. IC-Transaktionen müssen die Projektnummer transportieren.
+> ➜ In der `IC Setup` die Dimension PROJECT als IC-Dimension definieren.
+> **Ergebnis:** Bei jeder IC-Transaktion wird die Projektdimension automatisch in den Zielmandanten übertragen.
+
+---
+
+## 4.22 Fibu-Relevanz anderer Module (Querschnitt)
+
+Jeder buchhalterisch relevante Vorgang in BC28 mündet in die Finanzbuchhaltung. Dieser Abschnitt zeigt die Verbindungsstellen.
+
+### Einkauf (→ Kap. 6)
+
+| Quelle | Fibu-Auswirkung |
+|---|---|
+| Einkaufsbestellung (Purchase Order) | Wareneingang → `Inventory Adjmt. Account`, Rechnungseingang → `Purchase Account` |
+| Kreditoren-Rechnung (Purch. Invoice) | Erzeugt `VendLedgerEntry` und `VATEntry` |
+| Einkaufsgutschrift (Purch. Cr. Memo) | Bucht die entsprechende negativ-Zeile und optional `Correction`-Marker |
+| Kreditoren-Zahlung | Gleicht `VendLedgerEntry` aus, bucht Bankausgang (und ggf. Skonto) |
+
+### Verkauf (→ Kap. 5)
+
+| Quelle | Fibu-Auswirkung |
+|---|---|
+| Verkaufsauftrag (Sales Order) | Warenausgang → `COGS Account`, Fakturierung → `Sales Account` |
+| Verkaufsrechnung (Sales Invoice) | Erzeugt `CustLedgerEntry` und `VATEntry` |
+| Verkaufsgutschrift (Sales Cr. Memo) | Negative Rechnung — optional `Correction` für MwSt (`Mark Cr. Memos as Corrections`) |
+| Debitoren-Zahlung | Gleicht `CustLedgerEntry` aus, bucht Bankeingang (und ggf. Skonto) |
+
+### Lager & Logistik (→ Kap. 7)
+
+| Quelle | Fibu-Auswirkung |
+|---|---|
+| Wareneingang (Invt. Receipt) | Soll Bestand / Haben `Inventory Adjmt. Account` |
+| Warenausgang (Invt. Shipment) | Soll `COGS Account` / Haben Bestand |
+| Inventur (Phys. Inventory) | Differenzbuchung: Soll/Haben `Inventory Adjmt. Account` |
+| Umbuchung (Item Reclass.) | Umbuchung zwischen Bestandskonten |
+| Montageauftrag (Assembly Order) | Bestandsverbrauch-Komponenten + Zugang Montageartikel |
+
+### Produktion (→ Kap. 8)
+
+| Quelle | Fibu-Auswirkung |
+|---|---|
+| Fertigungsauftrag (Prod. Order) | Verbrauch Material → FiFo/LiFo-Bewertung, Istmeldung → `WIP Account` |
+| Kapazitätsbuchung (Capacity Ledger) | Fertigungslöhne → `Direct Cost Applied Account` |
+| Geplante Kosten (Expected Cost) | `WIP Method` → `WIP Account` + `COGS Account` |
+| Ist-Kosten abrechnen | Auflösung WIP → `COGS Account` |
+
+### Projekte (→ Kap. 9)
+
+| Quelle | Fibu-Auswirkung |
+|---|---|
+| Projekt-Buchungszeilen (Job Journal) | Soll Projekt-Aufwandskonto / Haben Gegenkonto |
+| Projekt-Abrechnung (Job Invoice) | Soll Debitorenkonto / Haben Projekt-Erlöskonto |
+| WIP-Berechnung (Job WIP) | Periodische Aktivierung/Passivierung unfertiger Projekte |
+
+### Service (→ Kap. 10)
+
+| Quelle | Fibu-Auswirkung |
+|---|---|
+| Serviceauftrag (Service Order) | Materialverbrauch → `COGS`, Arbeitszeit → Erlöse Service |
+| Service-Rechnung (Service Invoice) | Wie Verkaufsrechnung, aber mit Service-Preisfindung |
+| Garantieabwicklung | Kosten auf Herstellerkonto oder eigenes Garantiekonto |
+
+### Personal (→ Kap. 11)
+
+| Quelle | Fibu-Auswirkung |
+|---|---|
+| Gehaltsimport (Payroll Import) | Über `Import Payroll` → Fibu-Buchungszeilen je Mitarbeiter |
+| Urlaubsrückstellung | Monatliche Abgrenzungsbuchung (Rückstellung + Aufwand) |
+
+### Beispiel — Durchgängige Buchungskette vom Einkauf bis zur Fibu:
+
+> Das Unternehmen bestellt Rohmaterial für die Produktion:
+> 1. **Einkaufsbestellung** (Kap. 6): 10.000 kg Stahl für 5,00 €/kg = 50.000 € netto
+> 2. **Wareneingang** (Kap. 7): Soll Bestand 50.000 € / Haben `Inventory Adjmt. Account` 50.000 €
+> 3. **Rechnungseingang** (Kap. 4): Soll `Purchase Account` 50.000 €, Soll Vorsteuer 9.500 € / Haben Verbindlichkeiten 59.500 €
+> 4. **Zahlung** (Kap. 4.16): Bankabgang 59.500 € / Verbindlichkeiten 59.500 € — Ausgleich.
+> 5. **Produktion** (Kap. 8): Materialverbrauch 30.000 kg = 150.000 € → `COGS Account` bei Warenausgang.
+> 6. **Verkauf** (Kap. 5): Fertigprodukte verkauft → `Sales Account` / Debitor.
+> 7. **Zahlungseingang** (Kap. 4.15): Debitor bezahlt → Bankeingang.
+> 8. **Monatsabschluss** (Kap. 4.9): `Close Income Statement` — Saldo GuV → Bilanzgewinn.
+
+---
+
+## 4.23 Integrationsereignisse (für Entwickler)
 
 | Ereignis | Parameter | Verwendung |
 |---|---|---|
@@ -660,7 +1206,7 @@ codeunit 50100 "Meine Buchungsprüfung"
 
 ---
 
-## 4.10 Abhängige Tabellen & Codeunits
+## 4.24 Abhängige Tabellen & Codeunits
 
 | Tabelle/Codeunit | ID | Verwendung |
 |---|---|---|

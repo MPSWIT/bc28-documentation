@@ -27,13 +27,22 @@
 - [ ] 3.5 Weitere Foundation-Module
 
 ## 4. Base Application — Finance (Finanzwesen)
-- [x] 4.1 General Ledger (Sachkonten, Buchungsgruppen, Setup) — 22 Felder mit je 3 Beispielen
-- [ ] 4.2 Accounts Payable (Kreditoren)
-- [ ] 4.3 Accounts Receivable / Sales (Debitoren, Verkauf)
-- [ ] 4.4 Fixed Assets (Anlagen)
-- [ ] 4.5 Cash Management / Bank
-- [ ] 4.6 VAT / Tax / Intrastat
-- [ ] 4.7 Financial Reporting & Konsolidierung
+- [x] 4.1 General Ledger Setup — 22 Felder mit je 3 User-Story-Beispielen
+- [x] 4.2 Kontenplan & Sachkonten (Tabelle 15, GLAccount)
+- [x] 4.3 Buchungsgruppen — Gen. Posting Setup, die Buchungsmatrix
+- [x] 4.4 MwSt & Umsatzsteuer (VAT System)
+- [x] 4.5 Fibu-Buchungsjournale
+- [x] 4.6 Debitoren & Kreditoren (Receivables & Payables)
+- [x] 4.7 Bank & Zahlungsverkehr (SEPA, Bankabstimmung)
+- [x] 4.8 Anlagen (Fixed Assets)
+- [x] 4.9 Währung & Wechselkurse
+- [x] 4.10 Finanzberichte & Analyse (Account Schedules)
+- [x] 4.11 Budget
+- [x] 4.12 Konsolidierung
+- [x] 4.13 Abgrenzungen (Deferrals)
+- [x] 4.14 Intercompany (IC-Partner)
+- [x] 4.15 Fibu-Relevanz anderer Module (Querschnitt Einkauf/Verkauf/Lager/Produktion/Service/Projekte/HR)
+- [x] 4.16 Integrationsereignisse & Entwickler-Referenz
 
 ## 5. Base Application — Sales & Marketing
 - [ ] 5.1 Sales Documents (Angebot, Auftrag, Rechnung, Gutschrift)
