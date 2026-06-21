@@ -45,11 +45,13 @@
 - [x] 4.16 Integrationsereignisse & Entwickler-Referenz
 
 ## 5. Base Application — Sales & Marketing
-- [ ] 5.1 Sales Documents (Angebot, Auftrag, Rechnung, Gutschrift)
-- [ ] 5.2 Sales Pricing & Discounts
-- [ ] 5.3 Reminder / Mahnwesen
-- [ ] 5.4 Campaigns & Segments
-- [ ] 5.5 Customer Management
+- [x] 5.1 Sales & Receivables Setup — 73 Felder mit de-AT-Übersetzungen
+- [x] 5.2 Sales Documents (Angebot, Auftrag, Rechnung, Gutschrift, Retoure)
+- [x] 5.3 Sales Pricing & Discounts (Preislisten, Zeilen-, Rechnungsrabatte)
+- [x] 5.4 Reminder / Mahnwesen (Mahnmethoden, -stufen, Zinsrechnung)
+- [x] 5.5 Customer Management (Debitorenkarte, Buchungsgruppen, OP-Verwaltung)
+- [x] 5.6 Campaigns & Segments
+- [x] 5.7 Entwickler-Referenz (Integrationsereignisse, Codeunits, Tabellen)
 
 ## 6. Base Application — Purchasing (Einkauf)
 - [ ] 6.1 Purchase Documents (Anfrage, Bestellung, Rechnung)
@@ -129,5 +131,5 @@
 
 ---
 
-**Status:** 🟡 2/18 Kapitel begonnen (1, 4) — 4.1 GL Setup vollständig  
+**Status:** 🟢 3/18 Kapitel abgeschlossen (1, 4, 5)  
 **Quellen:** BC28 OnPrem Artifacts (`~/ai/onprem/28.1.49838.49886/at/`), [BCApps Reference](https://microsoft.github.io/BCApps), [Microsoft Learn](https://learn.microsoft.com/dynamics365/business-central/)
