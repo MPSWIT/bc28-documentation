@@ -54,10 +54,12 @@
 - [x] 5.7 Entwickler-Referenz (Integrationsereignisse, Codeunits, Tabellen)
 
 ## 6. Base Application — Purchasing (Einkauf)
-- [ ] 6.1 Purchase Documents (Anfrage, Bestellung, Rechnung)
-- [ ] 6.2 Purchase Pricing & Discounts
-- [ ] 6.3 Vendor Management
-- [ ] 6.4 Requisition (Anforderung)
+- [x] 6.1 Purchases & Payables Setup — 80+ Felder mit de-AT-Übersetzungen
+- [x] 6.2 Purchase Documents (Anfrage, Bestellung, Wareneingang, Rechnung)
+- [x] 6.3 Purchase Pricing & Discounts
+- [x] 6.4 Vendor Management (Kreditorenkarte, OP-Verwaltung)
+- [x] 6.5 Requisition (Einkaufsanforderungen)
+- [x] 6.6 Entwickler-Referenz (Integrationsereignisse, Codeunits, Tabellen)
 
 ## 7. Base Application — Inventory (Lager)
 - [ ] 7.1 Item Management (Artikel)
@@ -131,5 +133,5 @@
 
 ---
 
-**Status:** 🟢 3/18 Kapitel abgeschlossen (1, 4, 5)  
+**Status:** 🟢 4/18 Kapitel abgeschlossen (1, 4, 5, 6) — alle mit Subpages  
 **Quellen:** BC28 OnPrem Artifacts (`~/ai/onprem/28.1.49838.49886/at/`), [BCApps Reference](https://microsoft.github.io/BCApps), [Microsoft Learn](https://learn.microsoft.com/dynamics365/business-central/)
