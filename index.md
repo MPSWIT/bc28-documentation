@@ -91,7 +91,8 @@ Die Dokumentation folgt der App-Struktur von BC28. Ausgearbeitete Kapitel zeigen
 🚧 in Vorbereitung
 
 ### 19. [ToDo](19-todo/)
-&nbsp;&nbsp;└─ [Wertefluss in Business Central](19-todo/wertefluss/)
+&nbsp;&nbsp;├─ [Wertefluss in Business Central](19-todo/wertefluss/)
+&nbsp;&nbsp;└─ [Anlagen im Bau](19-todo/anlagen-im-bau/)
 
 ### 20. [FAQ — Ausgewählte Fragen](20-faq/)
 &nbsp;&nbsp;├─ [Rabatt vs. Skonto](20-faq/fachkonzepte/)

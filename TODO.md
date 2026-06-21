@@ -133,6 +133,7 @@
 
 ## 19. ToDo
 - [x] 19.1 Wertefluss in Business Central (Posten-Ökosystem, Buchungskette, Buchungsmatrix)
+- [x] 19.2 Anlagen im Bau (Maintenance → Acquisition Cost, Aktivierung, AfA-Beginn)
 - [ ] Weitere Themen folgen
 
 ## 20. FAQ — Ausgewählte Fragen

@@ -10,7 +10,8 @@ title: "ToDo"
 | # | Thema | Beschreibung |
 |---|---|---|
 | 1 | **[Wertefluss in Business Central](wertefluss/)** | Wie hängen Posten zusammen? Wann werden sie gebucht? Wie kommen Werte in die Fibu? |
-| 2–… | 🚧 Weitere Themen folgen | |
+| 2 | **[Anlagen im Bau](anlagen-im-bau/)** | Maintenance-Buchungen, Aktivierung auf Acquisition Cost, Buchungsmatrix |
+| 3–… | 🚧 Weitere Themen folgen | |
 
 ---
 
