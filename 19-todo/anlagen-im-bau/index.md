@@ -270,7 +270,97 @@ Aktivierung:
 
 ---
 
-## 19.2.6 Abgleich mit Bilanzierungsanforderungen (freefinance.at / HGB / UGB)
+## 19.2.6 Einkaufsrechnungen für Anlagen im Bau buchen
+
+> **Praxis-Frage:** Wenn ich für die Kosten vom Anlagenbau Einkaufsrechnungen erhalte, wie buche ich diese im System?
+
+Es gibt drei Wege, Baukosten über Einkaufsrechnungen zu erfassen — mit und ohne direkte Einbindung des Anlagenmoduls.
+
+### Weg 1: Einkaufsrechnung direkt auf Anlage (⭐ empfohlen)
+
+BC erlaubt `Type = Fixed Asset` auf Einkaufszeilen. Beim Buchen entsteht automatisch ein Maintenance Ledger Entry:
+
+```al
+// FAJnlPostLine.Codeunit.al — GenJnlPostLine(), Zeile 127–145:
+if GenJnlLine."FA Posting Type" = Maintenance then begin
+    MakeMaintenanceLedgEntry.CopyFromGenJnlLine(MaintenanceLedgEntry, GenJnlLine);
+    MaintenanceLedgEntry.Amount := FAAmount;
+    PostMaintenance();    // → Maintenance Ledger Entry + Fibu
+end
+```
+
+**Praktische Buchung:**
+```
+Einkaufsrechnung "ER-25001 Rohbau":
+  Typ = Anlage
+  Nr. = MA-1000 (Produktionshalle, im Bau)
+  FA-Buchungsart = Instandhaltung
+  AfA-Buch = LINEAR 33J
+  Betrag = 50.000 €
+  Gegenkonto = KREDITOR-ROHBAU
+
+→ Beim Buchen entsteht automatisch:
+  1. Maintenance Ledger Entry 50.000 €
+  2. G/L Entry: Anlagen im Bau 50.000 € an Kreditor 50.000 €
+  3. Vendor Ledger Entry (normaler Kreditorensaldo)
+```
+
+**Validierung durch BC (Source: `PurchPost.TestPurchLineFixedAsset`):**
+- ✅ `G/L Integration - Maintenance` = TRUE auf dem AfA-Buch
+- ✅ `Depr. until FA Posting Date` = FALSE (keine AfA bei Maintenance)
+- ✅ `Depr. Acquisition Cost` = FALSE
+- ✅ Anlage darf kein `Budgeted Asset` sein
+- ✅ `Insurance No.` muss leer sein
+
+**Vorteil:** Alles in einem Schritt — eine Einkaufsrechnung, ein Buchungslauf, Maintenance Ledger Entry + Fibu-Buchung automatisch.
+
+### Weg 2: Einkaufsrechnung auf Sachkonto + FA Journal
+
+```
+Schritt A — Einkaufsrechnung:
+  Typ = Sachkonto
+  Nr. = 0700 (Anlagen im Bau)
+  Betrag = 50.000 €
+  Gegenkonto = KREDITOR-ROHBAU
+→ Fibu: Anlagen im Bau 50.000 € an Kreditor 50.000 €
+
+Schritt B — FA Journal "AiB-SAMMEL":
+  Anlagennr. = MA-1000
+  FA-Buchungsart = Instandhaltung
+  Instandhaltungscode = AI-BAU25
+  Betrag = 50.000 €
+  Gegenkonto = 0700 (Verrechnung)
+→ Maintenance Ledger Entry + Fibu-Gegenbuchung
+```
+
+**Vorteil:** Trennung von Kreditorenbuchhaltung und Anlagenbuchhaltung. Flexibler, wenn Einkaufsabteilung und Anlagenbuchhaltung getrennt arbeiten.
+
+### Weg 3: Rein Sachkonto-basiert (kein Anlagenmodul während Bauphase)
+
+```
+Einkaufsrechnung:
+  Typ = Sachkonto
+  Nr. = 0700 (Anlagen im Bau)
+  Betrag = 50.000 €
+  Gegenkonto = KREDITOR-ROHBAU
+
+→ Kein Eintrag im Anlagenmodul bis zur Aktivierung.
+→ Erst bei Fertigstellung: FA Journal mit Acquisition Cost
+```
+
+### Vergleich der Buchungswege
+
+| Weg | EK-Rechnung Typ | FA-Eintrag | Aufwand | Fibu-Konto AiB |
+|---|---|---|---|---|
+| **Weg 1: EK direkt auf Anlage** | `Fixed Asset` + `Maintenance` | Maintenance Ledger Entry (automatisch) | Minimal | Via FA-Buchungsgruppe |
+| **Weg 2: EK → Sachkonto + FA Journal** | `G/L Account` 0700 | Maintenance Ledger Entry (manuell via FA Journal) | Mittel | Direkt auf Sachkonto |
+| **Weg 3: Rein Sachkonto** | `G/L Account` 0700 | Keiner | Minimal | Direkt auf Sachkonto |
+
+> **Empfehlung für Anlagen im Bau:** Weg 1 ist der sauberste und einfachste Weg. Kein FA Journal nötig, Maintenance Ledger Entry entsteht automatisch mit der Einkaufsrechnung, und die Fibu-Buchung verwendet das konfigurierte AiB-Konto der FA-Buchungsgruppe.
+
+---
+
+## 19.2.7 Abgleich mit Bilanzierungsanforderungen (freefinance.at / HGB / UGB)
 
 Die fachlichen Anforderungen aus dem Bilanzrecht lassen sich wie folgt in BC28 abbilden:
 
@@ -286,7 +376,7 @@ Die fachlichen Anforderungen aus dem Bilanzrecht lassen sich wie folgt in BC28 a
 
 > **Fazit:** Alle bilanzrechtlichen Anforderungen an Anlagen im Bau sind mit dem Maintenance-Ansatz + Buchungsgruppenwechsel **vollständig abbildbar**. Der einzige manuelle Schritt ist die Trennung direkter vs. indirekter Kosten — das kann BC nicht automatisch, weil die Zuordnung eine unternehmerische Entscheidung ist.
 
-## 19.2.7 Entwickler-Referenz
+## 19.2.8 Entwickler-Referenz
 
 ### Relevante Quellcode-Objekte
 
