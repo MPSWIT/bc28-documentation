@@ -132,7 +132,8 @@
 - [ ] 18.3 Datenmigration (RapidStart, Configuration Packages)
 
 ## 19. ToDo
-- [ ] Inhalt folgt
+- [x] 19.1 Wertefluss in Business Central (Posten-Ökosystem, Buchungskette, Buchungsmatrix)
+- [ ] Weitere Themen folgen
 
 ## 20. FAQ — Ausgewählte Fragen
 - [x] 20.1 Rabatt vs. Skonto (Fachkonzept)

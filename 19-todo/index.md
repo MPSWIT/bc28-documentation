@@ -1,8 +1,17 @@
 ---
 title: "ToDo"
 ---
-# 19. ToDo
+# 19. ToDo — Ausgewählte Themen
 
-> 🚧 Dieses Kapitel ist noch nicht ausgearbeitet.
+> 📄 **[← Zurück zur Übersicht]({{ '/index' | relative_url }})**
 
-| [← Zurück zur Übersicht]({{ '/index' | relative_url }}) |
+---
+
+| # | Thema | Beschreibung |
+|---|---|---|
+| 1 | **[Wertefluss in Business Central](wertefluss/)** | Wie hängen Posten zusammen? Wann werden sie gebucht? Wie kommen Werte in die Fibu? |
+| 2–… | 🚧 Weitere Themen folgen | |
+
+---
+
+| [← Zurück zur Übersicht]({{ '/index' | relative_url }}) | [Wertefluss →](wertefluss/) |
