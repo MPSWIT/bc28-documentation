@@ -21,20 +21,39 @@ BC28 hat kein natives AiB-Feld auf der Anlagenkarte. Es gibt drei Wege, diese An
 
 > **Grundidee:** Während der Bauphase werden alle Kosten als `Maintenance` gebucht (keine AfA). Bei Fertigstellung wechselt die `FA Posting Group` von AiB auf die Zielgruppe, und die Maintenance-Summe wird auf `Acquisition Cost` transferiert.
 
-### Warum Maintenance funktioniert
+### Warum Maintenance funktioniert — Quellcode-Beweis
 
-Der Maintenance-Ansatz ist **nicht** auf Instandhaltungs-**Aufwand** beschränkt. Alles hängt von der FA-Buchungsgruppe ab:
+Der Maintenance-Ansatz ist **nicht** auf Instandhaltungs-Aufwand beschränkt. Vier Fakten aus dem BC28-Quellcode belegen das:
 
 ```al
-// FAPostingGroup.Table.al
-field(22; "Maintenance Expense Account"; Code[20])
-{
-    // Dieses Feld HEIßT "Expense Account", aber wohin es zeigt,
-    // bestimmt der Anwender. Es kann auf ein Aktivkonto zeigen!
-}
+// 1. Keine Sperre: Maintenance kann OHNE vorhandene Acquisition Cost gebucht werden
+// FAJnlCheckLine.Codeunit.al — CheckJnlLine() prüft NUR das G/L Integration-Flag:
+case FAPostingType of
+    FAPostingType::Maintenance:
+        GLIntegration := DeprBook."G/L Integration - Maintenance";
+end;
+// → Kein Check auf vorhandene Acquisition Cost!
+
+// 2. Maintenance zählt NICHT zum Buchwert / AfA-Basis
+// FADepreciationBook.Table.al, field(15):
+CalcFormula = sum("FA Ledger Entry".Amount where(
+    "FA Posting Type" = const("Acquisition Cost")));
+// → FlowField filtert exklusiv auf Acquisition Cost
+
+// 3. "Bereit für Aktivierung" prüft NICHT auf vorhandene Acquisition Cost
+// FADepreciationBook.Table.al — RecIsReadyForAcquisition():
+if ("Depreciation Book Code" = FASetup."Default Depr. Book") and
+   ("FA Posting Group" <> '') and
+   ("Depreciation Starting Date" > 0D)
+then ...  // → KEIN Check auf Acq. Cost > 0!
+
+// 4. G/L-Integration ist pro Buchungstyp granular schaltbar
+// DepreciationBook.Table.al:
+field(10; "G/L Integration - Maintenance"; Boolean)
+// → de-AT: "Fibu-Integr. - Wartung"
 ```
 
-Der Name ist Semantik — die technische Wirkung ist: **Buchung auf das konfigurierte Konto, keine AfA-Berechnung, keine Erhöhung des Buchwerts.**
+Das `Maintenance Expense Account` (Feld 22 in `FAPostingGroup.Table.al`) heißt zwar „Expense", aber wohin es zeigt, bestimmt der Anwender. Es kann auf ein **Aktivkonto** „Anlagen im Bau" zeigen — die Software erzwingt das nicht.
 
 ### Ausgangssituation
 
@@ -251,7 +270,23 @@ Aktivierung:
 
 ---
 
-## 19.2.6 Entwickler-Referenz
+## 19.2.6 Abgleich mit Bilanzierungsanforderungen (freefinance.at / HGB / UGB)
+
+Die fachlichen Anforderungen aus dem Bilanzrecht lassen sich wie folgt in BC28 abbilden:
+
+| Bilanzielle Anforderung | Umsetzung in BC28 (Ansatz 1) | Status |
+|---|---|---|
+| **Materialkosten, Arbeitskosten aktivieren** | FA Journal: `FA Posting Type = Maintenance`, `Maintenance Code = AI-BAU25` → FA Ledger Entry | ✅ |
+| **Fremdkapitalzinsen aktivieren** (wenn direkt zurechenbar) | Zusätzliche FA Journal-Zeile: Maintenance → AiB-FA-Buchungsgruppe | ✅ |
+| **Nebenkosten aktivieren** | Wie Materialkosten — gleicher Maintenance-Code | ✅ |
+| **Indirekte Kosten NICHT aktivieren** | Werden nicht auf AiB-Buchungsgruppe gebucht (manuelle Trennung) | ✅ |
+| **Regelmäßige Überprüfung/Anpassung** | FA Ledger Entries sind stornierbar / korrigierbar via Gegenbuchung | ✅ |
+| **Umbuchung bei Fertigstellung** | Maintenance-Summe gegenbuchen + Acquisition Cost buchen + Buchungsgruppe wechseln | ✅ |
+| **AfA-Beginn ab Betriebsbereitschaft** | `Depreciation Starting Date` auf Fertigstellungsdatum setzen, `No. of Depreciation Years` definieren | ✅ |
+
+> **Fazit:** Alle bilanzrechtlichen Anforderungen an Anlagen im Bau sind mit dem Maintenance-Ansatz + Buchungsgruppenwechsel **vollständig abbildbar**. Der einzige manuelle Schritt ist die Trennung direkter vs. indirekter Kosten — das kann BC nicht automatisch, weil die Zuordnung eine unternehmerische Entscheidung ist.
+
+## 19.2.7 Entwickler-Referenz
 
 ### Relevante Quellcode-Objekte
 
