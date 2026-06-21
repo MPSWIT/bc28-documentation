@@ -1,0 +1,27 @@
+# Jekyll configuration for BC28 Documentation (GitHub Pages)
+title: "Business Central 28 – Technische Dokumentation"
+description: "Vollständige technische Referenz der BC28 App-Architektur"
+baseurl: "/bc28-documentation"
+url: "https://mpswit.github.io"
+
+# Theme
+theme: jekyll-theme-cayman
+
+# No search engine indexing
+noindex: true
+
+# Navigation
+show_downloads: false
+
+# Markdown
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+      noindex: true
