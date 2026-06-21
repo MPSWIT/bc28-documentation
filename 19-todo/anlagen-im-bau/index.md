@@ -3,7 +3,7 @@ title: "ToDo — Anlagen im Bau"
 ---
 # 19.2 Anlagen im Bau (Assets under Construction)
 
-> **Leitfrage:** Wie geht man in Business Central mit Anlagen im Bau um? Wie werden Baukosten gesammelt, bilanziell getrennt ausgewiesen und aktiviert?
+> **Leitfrage:** Wie geht man in Business Central mit Anlagen im Bau um? Bilanzielle Trennung, Baukosten sammeln, Aktivierung.
 
 > 📄 **[← ToDo-Übersicht]({{ '/19-todo/' | relative_url }})**
 
@@ -11,157 +11,281 @@ title: "ToDo — Anlagen im Bau"
 
 ## 19.2.1 Das Problem
 
-**Anlagen im Bau** (AiB, CIP = Construction in Progress) müssen bilanziell **getrennt** von fertigen Anlagen ausgewiesen werden. Erst nach Fertigstellung werden sie in die endgültige Anlagenklasse umgebucht und die planmäßige AfA beginnt.
+**Anlagen im Bau** (AiB, CIP) müssen bilanziell **getrennt** von fertigen Anlagen ausgewiesen werden. Erst nach Fertigstellung werden sie in die endgültige Anlagenklasse umgebucht und die AfA beginnt.
 
-Die Herausforderung in BC28: Es gibt **kein natives AiB-Feld** auf der Anlagenkarte. Es gibt drei gangbare Wege — mit unterschiedlicher konzeptioneller Sauberkeit.
+BC28 hat kein natives AiB-Feld auf der Anlagenkarte. Es gibt drei Wege, diese Anforderung abzubilden — die ersten beiden sind technisch solide, der dritte einfach, aber ohne Anlagenhistorie.
 
 ---
 
-## 19.2.2 Ansatz 1: Sachkonto-basiert (✅ empfohlen)
+## 19.2.2 Ansatz 1: Maintenance-Mechanismus + Buchungsgruppenwechsel
 
-**Idee:** Während der Bauphase werden alle Kosten **ausschließlich** auf ein separates Sachkonto „Anlagen im Bau" gebucht — über Einkaufsrechnungen oder Fibu-Buchungsblätter. Das Anlagenmodul wird erst bei Aktivierung beteiligt.
+> **Grundidee:** Während der Bauphase werden alle Kosten als `Maintenance` gebucht (keine AfA). Bei Fertigstellung wechselt die `FA Posting Group` von AiB auf die Zielgruppe, und die Maintenance-Summe wird auf `Acquisition Cost` transferiert.
 
-```
-Bauphase:                    Aktivierung:
-┌──────────────────┐        ┌──────────────────────┐
-│ EK-Rechnung       │        │ FA Journal            │
-│ Soll: AiB-Konto   │        │ FA Posting Type =     │
-│ Haben: Kreditor   │        │   Acquisition Cost    │
-│                    │        │ Soll: Gebäude-Konto   │
-│ KEIN FA-Eintrag!  │        │ Haben: AiB-Konto      │
-└──────────────────┘        └──────────────────────┘
-```
+### Warum Maintenance funktioniert
 
-### Schritt 1 — Sachkonto „Anlagen im Bau" anlegen
+Der Maintenance-Ansatz ist **nicht** auf Instandhaltungs-**Aufwand** beschränkt. Alles hängt von der FA-Buchungsgruppe ab:
 
-```
-G/L Account "0700 Anlagen im Bau"
-  Account Category = Assets
-  Account Subcategory = Tangible Assets
+```al
+// FAPostingGroup.Table.al
+field(22; "Maintenance Expense Account"; Code[20])
+{
+    // Dieses Feld HEIßT "Expense Account", aber wohin es zeigt,
+    // bestimmt der Anwender. Es kann auf ein Aktivkonto zeigen!
+}
 ```
 
-### Schritt 2 — Baukosten via Einkaufsrechnung erfassen
+Der Name ist Semantik — die technische Wirkung ist: **Buchung auf das konfigurierte Konto, keine AfA-Berechnung, keine Erhöhung des Buchwerts.**
+
+### Ausgangssituation
 
 ```
-Purchase Invoice:
-  Type = G/L Account
-  No. = 0700          ← direkt auf AiB-Konto
-  Amount = 50.000 €
+Depreciation Book (Tabelle "Depreciation Book"):
+  ┌─────────────────────────────────────────┐
+  │ Code = "LINEAR 33J"                     │
+  │ G/L Integration - Acq. Cost    = ☑      │
+  │ G/L Integration - Maintenance  = ☑      │
+  │ G/L Integration - Depreciation = ☑      │
+  └─────────────────────────────────────────┘
 ```
 
-> Kein FA No., kein FA Posting Type — die Rechnung berührt nur das Sachkonto.
-
-### Schritt 3 — Bei Fertigstellung: Anlage aktivieren
+### Schritt 1 — Eigene FA-Buchungsgruppe „ANLAGEN IM BAU"
 
 ```
-1. Fixed Asset "MA-1000 Produktionshalle" anlegen
-   FA Posting Group = GEBÄUDE
-   Depreciation Book = LINEAR 33J
+FA Posting Group: ANLAGEN IM BAU
+  Acquisition Cost Account      = 0750 (AiB-Anschaffungskosten)
+  Maintenance Expense Account   = 0700 (Anlagen im Bau)    ← Aktivkonto!
+  Maintenance Bal. Acc.         = 9999 (Verrechnungskonto)
+  Depreciation Expense Acc.     = 6520 (Abschreibung)
+  (alle anderen Konten wie üblich)
+```
 
-2. FA Journal erfassen:
-   FA No.              = MA-1000
-   FA Posting Type     = Acquisition Cost
-   Amount              = 140.000 €
-   Bal. Account No.    = 0700    ← Gegenkonto: AiB
+### Schritt 2 — Anlage & AfA-Buch vorbereiten
+
+```
+Fixed Asset "MA-1000 Produktionshalle"
+  FA Posting Group = ANLAGEN IM BAU
+
+FA Depreciation Book:
+  Depreciation Book Code    = LINEAR 33J
+  FA Posting Group          = ANLAGEN IM BAU
+  Depreciation Starting Date = 01.01.2026  (Zukunft — AfA startet später)
+```
+
+### Schritt 3 — Baukosten sammeln via FA Journal
+
+```
+FA Journal Batch "AiB-SAMMEL":
+  Zeile 1: FA No. = MA-1000
+           FA Posting Type = Maintenance
+           Maintenance Code = AI-BAU25
+           Amount = 50.000  (Rechnung Rohbau)
+           Bal. Account No. = KRED-12345
+
+  Zeile 2: FA No. = MA-1000
+           FA Posting Type = Maintenance
+           Maintenance Code = AI-BAU25
+           Amount = 15.000  (Statik)
+           Bal. Account No. = KRED-67890
+
+  ... Summe: 140.000 €
+
+→ FA Ledger Entry: 3× Maintenance à Summe 140.000 €
+→ G/L Entry: Anlagen im Bau 140.000 € an Kreditor 140.000 €
+→ AfA-Buch: Keine Veränderung (Maintenance wird nicht abgeschrieben)
+```
+
+### Schritt 4 — Aktivierung: Umbuchen + Buchungsgruppe wechseln
+
+```
+A) Maintenance-Summe gegenbuchen:
+   FA Journal:
+     FA Posting Type = Maintenance
+     Maintenance Code = AI-BAU25
+     Amount = -140.000 €
+     Bal. Account No. = 0700
+
+B) Acquisition Cost buchen:
+   FA Journal:
+     FA Posting Type = Acquisition Cost
+     Amount = +140.000 €
+     Bal. Account No. = 0700 (Anlagen im Bau)
+
+   → AiB-Konto auf Null, Gebäude aktiviert
+
+C) Buchungsgruppe umschlüsseln:
+   Fixed Asset "MA-1000":
+     FA Posting Group = GEBÄUDE    (statt ANLAGEN IM BAU)
+   
+   FA Depreciation Book:
+     FA Posting Group = GEBÄUDE
+     Depreciation Starting Date = 01.01.2025   ← Heute/Jetzt
 ```
 
 **Ergebnis:**
-- `FA Ledger Entry`: `Acquisition Cost` = 140.000 €
-- `G/L Entry`: Gebäude 140.000 € an Anlagen im Bau 140.000 €
-- AfA-Beginn ab Buchungsdatum
-
-**Vorteile:**
-- ✅ Klare bilanzielle Trennung (AiB auf eigenem Konto)
-- ✅ Keine Vermischung mit Instandhaltungs-Aufwand
-- ✅ Anlagenmodul bleibt sauber (nur fertige Anlagen)
-- ✅ Keine Hilfskonstrukte nötig
-
-**Nachteile:**
-- ❌ Keine FA-Ledger-Detailhistorie der Bauphase im Anlagenmodul
-- ❌ Manuelle Abstimmung AiB-Konto ↔ FA bei Aktivierung
-
----
-
-## 19.2.3 Ansatz 2: Separate FA-Buchungsgruppe für AiB
-
-**Idee:** Eine zweite FA-Posting-Group, deren `Acquisition Cost Account` auf das AiB-Sachkonto zeigt. Während der Bauphase werden Acquisition-Cost-Buchungen auf diese Gruppe vorgenommen.
-
-```
-1. FA Posting Group "ANLAGEN IM BAU":
-   Acquisition Cost Account = 0700 (Anlagen im Bau)
-   (andere Konten irrelevant — keine AfA während Bauphase)
-
-2. Fixed Asset "MA-1000" anlegen:
-   FA Posting Group = ANLAGEN IM BAU
-   Depreciation Book = KEIN BUCH (keine AfA während Bau)
-
-3. Baukosten: FA Journal mit FA Posting Type = Acquisition Cost
-   → FA Ledger Entry entsteht
-   → G/L: AiB-Konto an Kreditor/Bank
-
-4. Aktivierung: FA Posting Group umschlüsseln auf GEBÄUDE
-   oder: Disposal aus AiB-Anlage + Acquisition Cost auf Ziel-Anlage
-```
+- `FA Ledger Entry` enthält die vollständige Bauhistorie (Maintenance-Einträge)
+- Danach: `Acquisition Cost` = 140.000 € → AfA-Buch aktualisiert Buchwert
+- `G/L`: Anlagen im Bau-Konto = 0 €, Gebäude-Konto = 140.000 €
+- AfA-Berechnung startet ab neuem Starting Date
 
 **Vorteile:**
 - ✅ FA Ledger Entry-Historie bleibt erhalten
 - ✅ Bilanzielle Trennung durch eigenes AiB-Konto
-- ✅ Keine Maintenance-Fehlinterpretation
+- ✅ Keine Zweckentfremdung (FA-Buchungsgruppe sauber getrennt)
 
 **Nachteile:**
-- ❌ Höherer Einrichtungsaufwand (eigene FA-Buchungsgruppe)
-- ❌ Bei Umgruppierung entstehen Disposal-/Acquisition-Datensätze
+- ❌ Einrichtungsaufwand (eigene FA-Buchungsgruppe)
+- ❌ Manueller Wechsel der Buchungsgruppe bei Aktivierung
 
 ---
 
-## 19.2.4 Ansatz 3: Maintenance-Mechanismus (⚠️ nur bedingt geeignet)
+## 19.2.3 Ansatz 2: Mit der Fibu-Integration spielen
 
-Der Maintenance-Ansatz wurde bereits beschrieben — hier die **Probleme im Detail**:
+> **Grundidee:** Man verwendet ein AfA-Buch, in dem die G/L-Integration für bestimmte FA Posting Types **deaktiviert** wird. So können Maintenance-Buchungen im Anlagenmodul existieren, ohne in die Fibu zu gehen. Die Fibu wird separat bedient — entweder über das Sachkonto oder über ein zweites AfA-Buch.
+
+### Das AfA-Buch (Depreciation Book) als Schaltzentrale
 
 ```al
-// FAPostingGroup.Table.al, Zeile 243
-field(22; "Maintenance Expense Account"; Code[20])
-{
-    Caption = 'Maintenance Expense Account';
-    ToolTip = 'Specifies the general ledger account number to
-               post maintenance EXPENSES for fixed assets to...';
-}
-//                           ^^^^^^^^^
-// Dieses Konto ist ein AUFWANDS-Konto, kein Aktivkonto!
+// DepreciationBook.Table.al — die G/L Integration-Flags pro Buchungstyp
+field(3;  "G/L Integration - Acq. Cost";    Boolean)
+field(4;  "G/L Integration - Depreciation";  Boolean)
+field(10; "G/L Integration - Maintenance";   Boolean)
+//       → de-AT: "Fibu-Integr. - Wartung"
 ```
 
-**Das Kernproblem:** Der `Maintenance Expense Account` wird in der GuV als Instandhaltungsaufwand gebucht. Für AiB bräuchte man ein **Aktivkonto**. Die einzige „Lösung": eine eigene FA-Buchungsgruppe anlegen, in der das `Maintenance Expense Account` auf das AiB-Aktivkonto zeigt — aber das ist eine **Zweckentfremdung** des Feldes.
+Jeder FA Posting Type hat einen eigenen Schalter, ob Buchungen in die Fibu durchgereicht werden.
 
-**Zusätzliche Risiken:**
-- Reports werten Maintenance als Instandhaltungsaufwand aus → verzerrtes Reporting
-- Verwechslungsgefahr mit echter Instandhaltung (Reparaturen)
-- Bei Steuerprüfung erklärungsbedürftig
+### Variante A: Zwei AfA-Bücher — eines für AiB, eines für die fertige Anlage
 
-> **Fazit:** Der Maintenance-Ansatz ist nur dann akzeptabel, wenn man eine **eigene, dedizierte FA-Buchungsgruppe** nur für AiB anlegt und deren Maintenance-Konto auf das AiB-Sachkonto zeigt. Dann ist es aber konzeptionell identisch mit **Ansatz 2** (Separate FA-Buchungsgruppe) — nur mit dem semantisch falschen Posting Type.
+```
+Depreciation Book "AiB-SAMMEL":           (für Bauphase)
+  G/L Integration - Acq. Cost    = ☑
+  G/L Integration - Maintenance  = ☑    ← Fibu: AiB-Konto
+  G/L Integration - Depreciation = ☐    ← keine AfA-Buchung in Fibu
+
+Depreciation Book "LINEAR 33J":           (für fertige Anlage)
+  G/L Integration - Acq. Cost    = ☑
+  G/L Integration - Maintenance  = ☐
+  G/L Integration - Depreciation = ☑
+```
+
+**Ablauf:**
+
+```
+1. Anlage MA-1000 bekommt beide Bücher zugewiesen
+
+2. Bauphase: Maintenance-Buchungen ins AiB-SAMMEL-Buch
+   → FA Ledger Entry mit Depr. Book = AiB-SAMMEL
+   → Fibu: AiB-Konto
+
+3. Aktivierung: 
+   a) Maintenance-Summe gegenbuchen (AiB-SAMMEL)
+   b) Acquisition Cost buchen (LINEAR 33J)
+   c) AiB-SAMMEL-Buch deaktivieren oder löschen
+```
+
+**Vorteile:**
+- ✅ Kein Wechsel der FA-Buchungsgruppe nötig
+- ✅ Fibu-Integration granular steuerbar
+- ✅ Jedes AfA-Buch kann eigene Buchungsgruppe haben (Feld 13 im FA Depr. Book)
+
+**Nachteile:**
+- ❌ Zwei AfA-Bücher zu pflegen
+- ❌ Verwirrend für Anwender („Warum zwei Bücher?")
+
+### Variante B: G/L-Integration temporär deaktivieren
+
+```
+Bauphase:
+  Depreciation Book "LINEAR 33J":
+    G/L Integration - Maintenance  = ☐
+    → Maintenance erzeugt FA Ledger Entry, aber KEINE Fibu-Buchung
+
+  Fibu-Buchung separat:
+    Gen. Journal: AiB-Konto an Kreditor
+    → Kosten sind in der Fibu, aber nicht im Anlagenmodul
+
+Aktivierung:
+  Depreciation Book "LINEAR 33J":
+    G/L Integration - Acquisition Cost = ☑
+  FA Journal: Acquisition Cost 140.000 €
+    → FA Ledger Entry entsteht
+    → Fibu: Gebäude an AiB-Konto
+```
+
+**Vorteile:**
+- ✅ Nur ein AfA-Buch
+- ✅ Maximale Flexibilität
+
+**Nachteile:**
+- ❌ Manuelle Fibu-Buchungen während der Bauphase
+- ❌ Abstimmarbeit zwischen FA und Fibu nötig
 
 ---
 
-## 19.2.5 Bilanzielle Darstellung im Vergleich
+## 19.2.4 Ansatz 3: Rein Sachkonto-basiert (einfach, aber ohne FA-Historie)
 
-| Ansatz | AiB in Bilanz separat? | FA-Historie? | Konzeptionelle Sauberkeit |
+> Alle Baukosten direkt auf ein Sachkonto „Anlagen im Bau" via Einkaufsrechnungen buchen. Das Anlagenmodul wird erst bei Aktivierung beteiligt.
+
+| Phase | Was passiert | FA beteiligt? |
+|---|---|---|
+| Bauphase | EK-Rechnung → Sachkonto 0700 „Anlagen im Bau" | Nein |
+| Aktivierung | FA Journal: Acq. Cost → Gebäude-Konto, Gegenkonto 0700 | Ja |
+
+**Vorteile:** Kein Einrichtungsaufwand, keine Workarounds.
+**Nachteile:** Keine FA Ledger Entry-Historie der Baukosten, keine buchhalterische Nachvollziehbarkeit im Anlagenmodul.
+
+---
+
+## 19.2.5 Bewertung im Vergleich
+
+| Kriterium | Ansatz 1 (Maintenance + Wechsel) | Ansatz 2 (Fibu-Integration) | Ansatz 3 (Sachkonto) |
 |---|---|---|---|
-| **1. Sachkonto-basiert** | ✅ Ja (eigenes AiB-Konto) | ❌ Nein | ✅✅✅ Optimal |
-| **2. Eigene FA-Buchungsgruppe** | ✅ Ja (eigenes AiB-Konto) | ✅ Ja | ✅✅ Gut |
-| **3. Maintenance-Mechanismus** | ⚠️ Nur mit Workaround | ✅ Ja | ⚠️ Fragwürdig |
+| FA-Ledger-Historie | ✅ Ja | ✅ Ja | ❌ Nein |
+| Bilanzielle Trennung | ✅ Ja (eigene Gruppe) | ✅ Ja (eigenes Buch) | ✅ Ja (eigenes Konto) |
+| Einrichtungsaufwand | Mittel (eine extra Gruppe) | Hoch (zwei Bücher) | Gering |
+| AfA-Beginn steuerbar | ✅ Via Starting Date | ✅ Via Starting Date | ✅ Via Starting Date |
+| Berichtsanforderungen (Anlagenspiegel) | ✅ FA-Daten komplett | ✅ FA-Daten komplett | ⚠️ Nur aktivierte Werte |
+| Betriebsprüfung | Gut erklärbar | Gut erklärbar | Einfach erklärbar |
+
+> **Empfehlung:** Ansatz 1 (Maintenance + Buchungsgruppenwechsel) bietet den besten Kompromiss aus Nachvollziehbarkeit und Einrichtungsaufwand. Ansatz 2 ist die sauberste Lösung für Unternehmen mit komplexem Anlagenportfolio und mehreren AiB-Projekten parallel.
 
 ---
 
 ## 19.2.6 Entwickler-Referenz
 
-**Relevante Tabellen und Codeunits:**
+### Relevante Quellcode-Objekte
 
-| Objekt | ID | Zweck |
-|---|---|---|
-| `FA Posting Group` (Table) | — | 30+ Kontenfelder inkl. `Maintenance Expense Account` |
-| `FA Journal Line FA Posting Type` (Enum) | 5602 | Acquisition Cost, Maintenance, Depreciation, … |
-| `FA Get G/L Account No.` (Codeunit) | 5612 | Ermittelt Fibu-Konto via `GetMaintenanceExpenseAccount()` |
-| `FA Jnl.-Post Line` (Codeunit) | 5600 | Buchung FA Journal → FA Ledger Entry |
-| `FA Insert Ledg. Entry` (Codeunit) | 5610 | Anlage FA Ledger Entry-Datensätze |
+```al
+// FAJournalLineFAPostingType.Enum.al — die Buchungstypen (5602)
+value(0; "Acquisition Cost")   // Anschaffungskosten
+value(7; Maintenance)           // Instandhaltung (→ AiB-Mechanismus)
+
+// FAPostingGroup.Table.al — Kontenzuordnung
+field(22; "Maintenance Expense Account"; Code[20])
+field(24; "Acquisition Cost Bal. Acc."; Code[20])
+
+// DepreciationBook.Table.al — Fibu-Integration
+field(3;  "G/L Integration - Acq. Cost";    Boolean)
+field(10; "G/L Integration - Maintenance";   Boolean)
+
+// FA Depreciation Book.Table.al — je Anlage+Buch
+field(13; "FA Posting Group"; Code[20])  // pro Buch individuell!
+field(28; "Maintenance Code Filter"; Code[10])
+```
+
+### Integration Events
+
+```al
+// FA Jnl.-Post Line (Codeunit 5600)
+[IntegrationEvent(false, false)]
+procedure OnBeforeInsertFALedgerEntry(
+    var FAJournalLine: Record "FA Journal Line";
+    var FALedgerEntry: Record "FA Ledger Entry")
+
+// FA Get G/L Account No. (Codeunit 5612)
+procedure GetMaintenanceAccNo(
+    var MaintenanceLedgEntry: Record "Maintenance Ledger Entry"): Code[20]
+```
 
 ---
 
