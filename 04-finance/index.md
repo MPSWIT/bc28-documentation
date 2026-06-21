@@ -6,7 +6,7 @@ title: "Finanzwesen"
 > **Tabelle 98:** `GeneralLedgerSetup.Table.al`
 > **Namensraum:** `Microsoft.Finance.GeneralLedger.Setup`
 > **Seite:** `GeneralLedgerSetup.Page.al`
-> **Typ:** Singleton (genau ein Datensatz, Primärschlüssel = fester Code)
+> **Typ:** Singleton (genau ein Datensatz, Primärschlüssel = `Primärschlüssel`)
 
 Die Tabelle **Fibu-Einrichtung (98)** ist die zentrale Schaltstelle der gesamten Finanzbuchhaltung.
 Sie steuert Buchungszeiträume, MwSt-Verhalten, Rundung, Dimensionen und Zahlungstoleranzen.
@@ -15,9 +15,10 @@ Sie steuert Buchungszeiträume, MwSt-Verhalten, Rundung, Dimensionen und Zahlung
 
 ## 4.1 Buchungszeiträume
 
-### Feld 2: `Allow Posting From` — Frühestes Buchungsdatum
+### Feld 2: `Allow Posting From` — Buchungen zugel. ab
 
 Legt das früheste Datum fest, ab dem in die Finanzbuchhaltung gebucht werden darf.
+Offizielle BC-Überschrift: **Buchungen zugel. ab**.
 
 ```al
 field(2; "Allow Posting From"; Date)
@@ -58,9 +59,10 @@ field(2; "Allow Posting From"; Date)
 
 ---
 
-### Feld 4: `Register Time` — Buchungszeit speichern
+### Feld 4: `Register Time` — Protokollzeit
 
 Legt fest, ob zusätzlich zum Buchungsdatum auch die Uhrzeit der Buchung gespeichert wird.
+Offizielle BC-Überschrift: **Protokollzeit**.
 
 **Beispiel 1 — Ein Wirtschaftsprüfer verlangt minutengenaue Nachvollziehbarkeit:**
 > Das Unternehmen wird testiert und der Prüfer möchte sehen, in welcher Reihenfolge die Buchungen am Abschlusstag vorgenommen wurden. Wer hat wann die letzte Abschlussbuchung erstellt?
@@ -73,15 +75,16 @@ Legt fest, ob zusätzlich zum Buchungsdatum auch die Uhrzeit der Buchung gespeic
 > **Ergebnis:** Nur das Datum wird gespeichert. Die Ledger-Entry-Tabellen bleiben kleiner.
 
 **Beispiel 3 — Hintergrundbuchungen mit Job Queue:**
-> Das Unternehmen verarbeitet monatlich 5.000 automatische Zinsbuchungen über die Auftragswarteschlange. Die Finanzabteilung möchte dennoch wissen, wann genau welche Zinsbuchung verarbeitet wurde, um bei Rückfragen den exakten Verarbeitungszeitpunkt belegen zu können.
+> Das Unternehmen verarbeitet monatlich 5.000 automatische Zinsbuchungen über die Aufgabenwarteschlange. Die Finanzabteilung möchte dennoch wissen, wann genau welche Zinsbuchung verarbeitet wurde, um bei Rückfragen den exakten Verarbeitungszeitpunkt belegen zu können.
 > ➜ `Post with Job Queue = Ja` + `Register Time = Ja`
 > **Ergebnis:** Trotz Hintergrundverarbeitung erhält jede der 5.000 Buchungen einen individuellen Zeitstempel — vollständige Nachvollziehbarkeit auch bei Massenbuchungen.
 
 ---
 
-### Feld 169: `Posting Preview Type` — Art der Buchungsvorschau
+### Feld 169: `Posting Preview Type` — Buchungsvorschautyp
 
 Bestimmt, welche Vorschau dem Benutzer vor der endgültigen Buchung angezeigt wird.
+Offizielle BC-Überschrift: **Buchungsvorschautyp**.
 
 **Beispiel 1 — Ein neuer Buchhalter soll Buchungen vor dem Buchen prüfen:**
 > Das Unternehmen hat einen neuen Junior-Buchhalter eingestellt. Der Finanzleiter möchte, dass vor jeder Buchung eine detaillierte Vorschau der entstehenden Sachposten, Debitoren/Kreditoren-Posten und MwSt-Posten angezeigt wird.
@@ -106,9 +109,10 @@ Bestimmt, welche Vorschau dem Benutzer vor der endgültigen Buchung angezeigt wi
 
 ## 4.2 Dimensionen
 
-### Felder 79/80: `Global Dimension 1 Code` / `Global Dimension 2 Code` — Globale Dimensionen
+### Felder 79/80: `Global Dimension 1 Code` / `Global Dimension 2 Code` — Globaler Dimensionscode 1/2
 
 Die beiden globalen Dimensionen, die im gesamten System für Analyse und Berichtswesen verwendet werden.
+Offizielle BC-Überschrift: **Globaler Dimensionscode 1** / **Globaler Dimensionscode 2**.
 
 ```al
 field(79; "Global Dimension 1 Code"; Code[20])
@@ -154,9 +158,10 @@ field(44; "Cust. Balances Due"; Decimal)
 
 ---
 
-### Felder 81–88: `Shortcut Dimension 1..8 Code` — Schnelldimensionen
+### Felder 81–88: `Shortcut Dimension 1..8 Code` — Shortcutdimensionscode 1..8
 
 Schnellzugriffs-Dimensionen, die auf Buchungsseiten direkt sichtbar sind.
+Offizielle BC-Überschrift: **Shortcutdimensionscode 1** bis **Shortcutdimensionscode 8**.
 
 **Beispiel 1 — Ein Vertriebsteam benötigt Vertreter und Kampagne:**
 > Das Unternehmen hat 8 Außendienstmitarbeiter und führt regelmäßig Marketing-Kampagnen durch. Auf jeder Verkaufsbelegseite sollen Vertreter und Kampagne als Pflichtfelder erscheinen, damit die Provision und der Kampagnenerfolg auswertbar sind.
@@ -182,9 +187,10 @@ Schnellzugriffs-Dimensionen, die auf Buchungsseiten direkt sichtbar sind.
 
 ## 4.3 Mehrwertsteuer
 
-### Feld 7: `VAT Reporting Date` — Vorgabe MwSt-Datum
+### Feld 7: `VAT Reporting Date` — MwSt.-Standarddatum
 
 Legt fest, nach welchem Datum die MwSt standardmäßig gemeldet wird.
+Offizielle BC-Überschrift: **MwSt.-Standarddatum**.
 
 **Beispiel 1 — Ein Unternehmen mit IST-Versteuerung:**
 > Das Unternehmen versteuert nach vereinnahmten Entgelten (IST). Die MwSt soll immer dann gemeldet werden, wenn die Buchung tatsächlich erfolgt — unabhängig vom Rechnungsdatum.
@@ -207,9 +213,10 @@ Legt fest, nach welchem Datum die MwSt standardmäßig gemeldet wird.
 
 ---
 
-### Feld 48: `Unrealized VAT` — Nicht realisierte MwSt
+### Feld 48: `Unrealized VAT` — Unrealisierte MwSt.
 
 Aktiviert die Ist-Versteuerung mit nicht realisierter MwSt.
+Offizielle BC-Überschrift: **Unrealisierte MwSt.**
 
 ```al
 trigger OnValidate()
@@ -244,9 +251,10 @@ end;
 
 ---
 
-### Feld 103: `Bill-to/Sell-to VAT Calc.` — MwSt nach Rechnungs- oder Lieferadresse
+### Feld 103: `Bill-to/Sell-to VAT Calc.` — Rech. an/Verk. an MwSt.-Berech.
 
-Legt fest, ob die MwSt anhand der Rechnungsadresse oder der Lieferadresse ermittelt wird.
+Legt fest, ob die MwSt anhand der Rechnungsadresse (Rech. an) oder der Lieferadresse (Verk. an) ermittelt wird.
+Offizielle BC-Überschrift: **Rech. an/Verk. an MwSt.-Berech.**
 
 **Beispiel 1 — Standard: MwSt nach Rechnungsadresse:**
 > Ein deutsches Unternehmen verkauft an einen Kunden mit Rechnungsadresse in Deutschland. Die Ware wird an die deutsche Niederlassung geliefert — klarer Fall.
@@ -266,9 +274,10 @@ Legt fest, ob die MwSt anhand der Rechnungsadresse oder der Lieferadresse ermitt
 
 ---
 
-### Feld 188: `Control VAT Period` — MwSt-Zeitraum prüfen
+### Feld 188: `Control VAT Period` — MwSt.-Zeitraum kontrollieren
 
 Steuert die Validierung der MwSt-Zeiträume bei Buchungen.
+Offizielle BC-Überschrift: **MwSt.-Zeitraum kontrollieren**.
 
 **Beispiel 1 — Das Unternehmen möchte flexibel bleiben:**
 > Die Buchhaltung erfasst manchmal Rechnungen verspätet und möchte keine starren Sperren. Der MwSt-Zeitraum wird im Nachhinein über die MwSt-Meldung korrigiert.
@@ -287,11 +296,12 @@ Steuert die Validierung der MwSt-Zeiträume bei Buchungen.
 
 ---
 
-### Feld 72: `VAT Exchange Rate Adjustment` — MwSt-Kursanpassung
+### Feld 72: `VAT Exchange Rate Adjustment` — MwSt.-Kursregulierung
 
 Legt fest, wie MwSt-Beträge bei Wechselkursanpassungen behandelt werden.
+Offizielle BC-Überschrift: **MwSt.-Kursregulierung**.
 
-**Beispiel 1 — Das Unternehmen bucht nur in Landeswährung:**
+**Beispiel 1 — Das Unternehmen bucht nur in Mandantenwährung:**
 > Ein rein national tätiges Unternehmen hat keine Fremdwährungsbuchungen und benötigt keine MwSt-Kursanpassung.
 > ➜ `VAT Exchange Rate Adjustment = Keine Anpassung`
 > **Ergebnis:** Wechselkursdifferenzen werden nur für Sachkonten berechnet, MwSt bleibt unverändert.
@@ -309,9 +319,10 @@ Legt fest, wie MwSt-Beträge bei Wechselkursanpassungen behandelt werden.
 
 ## 4.4 Zahlungstoleranzen & Skonto
 
-### Felder 94/95: `Payment Tolerance %` / `Max. Payment Tolerance Amount` — Zahlungstoleranz
+### Felder 94/95: `Payment Tolerance %` / `Max. Payment Tolerance Amount` — Zahlungstoleranz % / Max. Zahlungstoleranzbetrag
 
 Maximale prozentuale und absolute Toleranz für den automatischen Zahlungsausgleich.
+Offizielle BC-Überschriften: **Zahlungstoleranz %** / **Max. Zahlungstoleranzbetrag**.
 
 > ⚠️ Diese Felder sind **nicht editierbar** (`Editable = false`). Sie werden vom System berechnet.
 
@@ -332,9 +343,10 @@ Maximale prozentuale und absolute Toleranz für den automatischen Zahlungsausgle
 
 ---
 
-### Feld 99/92: `Payment Tolerance Posting` / `Pmt. Disc. Tolerance Posting` — Toleranz-Buchungsart
+### Feld 99/92: `Payment Tolerance Posting` / `Pmt. Disc. Tolerance Posting` — Zahlungstoleranzbuchung / Skontotoleranzbuchung
 
 Legt fest, auf welche Konten Toleranzbeträge gebucht werden.
+Offizielle BC-Überschriften: **Zahlungstoleranzbuchung** / **Skontotoleranzbuchung**.
 
 ```al
 OptionMembers = "Payment Tolerance Accounts","Payment Discount Accounts";
@@ -356,9 +368,10 @@ OptionMembers = "Payment Tolerance Accounts","Payment Discount Accounts";
 
 ---
 
-### Feld 28: `Pmt. Disc. Excl. VAT` — Skonto ohne MwSt
+### Feld 28: `Pmt. Disc. Excl. VAT` — Skonto v. Nettobetrag
 
 Legt fest, ob Skonto nur vom Nettobetrag berechnet wird.
+Offizielle BC-Überschrift: **Skonto v. Nettobetrag**.
 
 ```al
 trigger OnValidate()
@@ -386,9 +399,10 @@ end;
 
 ---
 
-### Feld 49: `Adjust for Payment Disc.` — MwSt bei Skonto anpassen
+### Feld 49: `Adjust for Payment Disc.` — Skonto berichtigen
 
 Automatische MwSt-Korrektur bei Skontoabzug.
+Offizielle BC-Überschrift: **Skonto berichtigen**.
 
 ```al
 InitValue = true;   // Standard: aktiviert
@@ -412,9 +426,10 @@ InitValue = true;   // Standard: aktiviert
 
 ## 4.5 Rundung & Nachkommastellen
 
-### Felder 58/59: `Inv. Rounding Precision (LCY)` / `Inv. Rounding Type (LCY)` — Rechnungsrundung
+### Felder 58/59: `Inv. Rounding Precision (LCY)` / `Inv. Rounding Type (LCY)` — Rechnungsrundungspräz. (MW) / Rechnungsrundungsmethode (MW)
 
-Genauigkeit und Verfahren für die Rechnungsrundung in Landeswährung.
+Genauigkeit und Verfahren für die Rechnungsrundung in Mandantenwährung (MW).
+Offizielle BC-Überschriften: **Rechnungsrundungspräz. (MW)** / **Rechnungsrundungsmethode (MW)**.
 
 **Beispiel 1 — Standard: kaufmännisches Runden auf Cent:**
 > Ein deutsches Unternehmen erwartet ganz normale Cent-Rundung. Aus 123,455 wird 123,46.
@@ -446,12 +461,13 @@ end;
 
 ---
 
-### Feld 73: `Amount Rounding Precision` — Betragsrundung
+### Feld 73: `Amount Rounding Precision` — Betragsrundungspräzision
 
 Rundungsgenauigkeit für Geldbeträge (Initialwert = 0.01).
+Offizielle BC-Überschrift: **Betragsrundungspräzision**.
 
 **Beispiel 1 — Europäischer Standard mit 2 Nachkommastellen:**
-> Eine GmbH in Österreich mit EUR als Landeswährung. Ein Positionspreis von 10,00 € × 1,19 = 11,90 € — passt perfekt.
+> Eine GmbH in Österreich mit EUR als Mandantenwährung. Ein Positionspreis von 10,00 € × 1,19 = 11,90 € — passt perfekt.
 > ➜ `Amount Rounding Precision = 0.01`
 > **Ergebnis:** Alle Beträge auf 2 Nachkommastellen. Die `Amount Decimal Places`-Einstellung (Standard "2:2") sorgt für korrekte Anzeige.
 
@@ -469,9 +485,10 @@ Rundungsgenauigkeit für Geldbeträge (Initialwert = 0.01).
 
 ## 4.6 Zusätzliche Berichtswährung
 
-### Feld 68: `Additional Reporting Currency` — Zusätzliche Berichtswährung
+### Feld 68: `Additional Reporting Currency` — Berichtswährung
 
 Währungscode für parallele Buchführung.
+Offizielle BC-Überschrift: **Berichtswährung**.
 
 ```al
 trigger OnValidate()
@@ -490,14 +507,14 @@ end;
 ```
 
 **Beispiel 1 — Deutsche Tochter einer US-Muttergesellschaft:**
-> Die Muttergesellschaft in New York verlangt Berichte in USD. Das Unternehmen bucht in EUR (LCY), möchte aber parallel alle Buchungen in USD sehen.
+> Die Muttergesellschaft in New York verlangt Berichte in USD. Das Unternehmen bucht in EUR (Mandantenwährung), möchte aber parallel alle Buchungen in USD sehen.
 > ➜ `Additional Reporting Currency = USD`
 > **Ergebnis:** Der Bericht "Zusätzliche Berichtswährung anpassen" öffnet sich zur Wechselkurseingabe. Jede Buchung wird parallel in USD gespeichert. **Achtung:** Alle vorhandenen Analyseansichten werden über `DeleteAnalysisView()` gelöscht und müssen neu aufgebaut werden.
 
-**Beispiel 2 — Nur Landeswährung (Standard):**
+**Beispiel 2 — Nur Mandantenwährung (Standard):**
 > Ein rein national tätiges Unternehmen ohne Auslandsbezug benötigt keine Parallelwährung.
 > ➜ `Additional Reporting Currency = ''` (leer)
-> **Ergebnis:** Nur in EUR buchen. Keine Parallelwährung. Analyseansichten bleiben erhalten.
+> **Ergebnis:** Nur in EUR (Mandantenwährung) buchen. Keine Parallelwährung. Analyseansichten bleiben erhalten.
 
 **Beispiel 3 — Währungsumstellung von USD auf CHF:**
 > Die Muttergesellschaft wechselt den Konzernstandard von USD auf CHF. Der Bericht "Zusätzliche Berichtswährung anpassen" öffnet sich. Der Buchhalter stellt die Kurse ein.
@@ -505,11 +522,12 @@ end;
 
 ---
 
-## 4.7 Auftragswarteschlange & Hintergrundbuchung
+## 4.7 Aufgabenwarteschlange & Hintergrundbuchung
 
-### Feld 50: `Post with Job Queue` — Buchen über Auftragswarteschlange
+### Feld 50: `Post with Job Queue` — Mit Aufgabenwarteschlange buchen
 
-Ermöglicht das Buchen im Hintergrund über die Auftragswarteschlange.
+Ermöglicht das Buchen im Hintergrund über die Aufgabenwarteschlange.
+Offizielle BC-Überschrift: **Mit Aufgabenwarteschlange buchen**.
 
 ```al
 trigger OnValidate()
@@ -527,7 +545,7 @@ end;
 **Beispiel 2 — Monatsabschluss mit 5.000 Buchungen im Batch:**
 > Zum Monatsende müssen 5.000 automatische Abschlussbuchungen (Abgrenzungen, Rückstellungen, Abschreibungen) verarbeitet werden. Die Buchhaltung startet den Batch und möchte weiterarbeiten können.
 > ➜ `Post with Job Queue = Ja`, `Job Queue Category Code = "MONATSABSCHLUSS"`, `Job Queue Priority for Post = 1000`, `Notify On Success = Ja`
-> **Ergebnis:** Die 5.000 Buchungen werden in der Auftragswarteschlange eingereiht. Der Buchhalter kann sofort andere Aufgaben erledigen. Bei Abschluss erscheint eine Benachrichtigung.
+> **Ergebnis:** Die 5.000 Buchungen werden in der Aufgabenwarteschlange eingereiht. Der Buchhalter kann sofort andere Aufgaben erledigen. Bei Abschluss erscheint eine Benachrichtigung.
 
 **Beispiel 3 — Buchen und Drucken im Hintergrund:**
 > Das Unternehmen verschickt täglich 200 Ausgangsrechnungen per E-Mail. Nach der Buchung soll automatisch das PDF erzeugt und versendet werden — alles ohne Benutzerinteraktion.
@@ -535,16 +553,17 @@ end;
 > **Ergebnis:** Buchung + PDF-Erzeugung + E-Mail-Versand in einem automatisierten Durchlauf. Der Sachbearbeiter startet den Stapel und widmet sich anderen Aufgaben.
 
 **Relevante Codestellen:**
-- `JobQueueActive(): Boolean` — prüft, ob Auftragswarteschlange aktiv ist
+- `JobQueueActive(): Boolean` — prüft, ob Aufgabenwarteschlange aktiv ist
 - **Codeunit "Job Queue"** — verwaltet die Warteschlangeneinträge
 
 ---
 
 ## 4.8 Sonstige wichtige Felder
 
-### Feld 164: `Show Amounts` — Betragsanzeige
+### Feld 164: `Show Amounts` — Beträge anzeigen
 
 Steuert, wie Beträge in Sachposten und Berichten angezeigt werden.
+Offizielle BC-Überschrift: **Beträge anzeigen**.
 
 ```al
 OptionMembers = "Amount Only","Debit/Credit Only","All Amounts";
@@ -573,6 +592,7 @@ OptionMembers = "Amount Only","Debit/Credit Only","All Amounts";
 ### Feld 65: `Summarize G/L Entries` — Sachposten zusammenfassen
 
 Fasst identische Sachposten (gleiches Konto, Datum, Dimensionen) zusammen.
+Offizielle BC-Überschrift: **Sachposten zusammenfassen**.
 
 **Beispiel 1 — Ein Großhändler mit Massenbuchungen möchte Speicherplatz sparen:**
 > Das Unternehmen bucht täglich 1.000 Rechnungen an denselben Großkunden. Hunderte identische Sachposten würden die Datenbank aufblähen.
@@ -589,9 +609,10 @@ Fasst identische Sachposten (gleiches Konto, Datum, Dimensionen) zusammen.
 
 ---
 
-### Feld 56: `Mark Cr. Memos as Corrections` — Gutschriften als Korrektur
+### Feld 56: `Mark Cr. Memos as Corrections` — Gutschriften als Storno mark.
 
 Markiert Gutschriften als Korrekturbuchungen für MwSt und Berichtswesen.
+Offizielle BC-Überschrift: **Gutschriften als Storno mark.**
 
 **Beispiel 1 — Deutsche UStVA verlangt Trennung von Korrekturen:**
 > Das Unternehmen muss in der Umsatzsteuer-Voranmeldung Korrekturgutschriften separat in Zeile 56 ausweisen. Das Finanzamt akzeptiert keine vermischten Werte.
