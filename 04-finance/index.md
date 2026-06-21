@@ -1206,22 +1206,242 @@ codeunit 50100 "Meine Buchungsprüfung"
 
 ---
 
-## 4.24 Abhängige Tabellen & Codeunits
+## 4.24 Kontierungsschlüssel (Allocation Accounts)
+
+> **Namensraum:** `Microsoft.Finance.AllocationAccount`
+> **Kern-Tabellen:** `AllocationAccount.Table.al` (1300), `AllocationLine.Table.al` (1301)
+
+Kontierungsschlüssel verteilen Buchungsbeträge automatisch auf mehrere Konten oder Dimensionen — z.B. Mietkosten nach Quadratmetern auf Abteilungen.
+
+```al
+field("Distribution %"; Decimal)         // Verteilungsschlüssel in %
+field("Account No."; Code[20])           // Zielkonto
+field("Dimension Value Code"; Code[20])  // Dimensionswert
+```
+
+**Beispiel 1 — Gebäudekosten nach Fläche verteilen:**
+> Das Unternehmen hat 3 Abteilungen (Vertrieb 200m², Produktion 500m², Verwaltung 300m²). Die Monatsmiete von 10.000 € soll automatisch verteilt werden.
+> ➜ `Allocation Account` anlegen: Vertrieb 20%, Produktion 50%, Verwaltung 30%. Der Kontierungsschlüssel wird in der Kreditoren-Fibu-Zeile ausgewählt.
+> **Ergebnis:** Aus einer 10.000 €-Kreditorenrechnung werden automatisch drei Fibu-Zeilen: Vertrieb 2.000 €, Produktion 5.000 €, Verwaltung 3.000 € — je auf das richtige Kostenstellenkonto.
+
+**Beispiel 2 — Werbekosten auf Kampagnen-Dimensionen splitten:**
+> Eine Marketing-Agentur-Rechnung über 30.000 € soll auf 3 Kampagnen (K1 40%, K2 35%, K3 25%) verteilt werden.
+> ➜ `Allocation Account` mit Dimensions-Zielwerten K1/K2/K3.
+> **Ergebnis:** Die Buchungsvorschau zeigt 3 Fibu-Zeilen — jede mit der korrekten Kampagnen-Dimension. Der Buchhalter muss nicht manuell splitten.
+
+---
+
+## 4.25 Dimensionskorrektur (Dimension Correction)
+
+> **Namensraum:** `Microsoft.Finance.Dimension.Correction`
+> **Kern-Codeunit:** `DimCorrectionRun.Codeunit.al`
+
+Nachträgliche Korrektur von Dimensionswerten auf **bereits gebuchten Posten** — ohne Storno und Neubuchung.
+
+**Beispiel 1 — Falsche Kostenstelle auf 50 Sachposten korrigieren:**
+> Ein Buchhalter hat 50 Rechnungen fälschlich auf Kostenstelle KST-A statt KST-B gebucht. Storno und Neubuchung würden 100 Buchungen bedeuten.
+> ➜ `Dimensionskorrektur`-Seite öffnen, Filter auf die 50 Sachposten, neue Kostenstelle = KST-B.
+> **Ergebnis:** Alle 50 Posten werden in einem Lauf korrigiert. Die `Dimension Set Entry`-Tabelle wird aktualisiert, ein Korrektur-Log (`DimCorrectionEntryLog`) dokumentiert die Änderung. Keine neue Fibu-Buchung nötig.
+
+**Beispiel 2 — Vor dem Jahresabschluss Dimensionsfehler bereinigen:**
+> Der Controller stellt fest, dass drei Monate Projektbuchungen ohne Projekt-Dimension gebucht wurden. Die Abschluss-GuV wäre verfälscht.
+> ➜ Dimensionskorrektur mit Datumsfilter 01.04.–30.06., Setzen der fehlenden Projekt-Dimension.
+> **Ergebnis:** Die GuV-Auswertung nach Projekten zeigt nun die korrekten Werte. Der Wirtschaftsprüfer sieht die Korrektur im Log.
+
+---
+
+## 4.26 Stornobuchungen (Reversal)
+
+> **Namensraum:** `Microsoft.Finance.GeneralLedger.Reversal`
+> **Kern-Tabellen:** `ReversalEntry.Table.al` (1850)
+
+Stornobuchungen machen fehlerhafte Buchungen rückgängig, ohne die Originalbuchung zu verändern — zwingend für Revisionssicherheit.
+
+```al
+field("Reversal Entry No."; Integer)
+field("Reversed by Entry No."; Integer)   // Verweist auf den Originalposten
+```
+
+**Beispiel 1 — Eine falsch gebuchte Monatsmiete stornieren:**
+> Der Buchhalter hat die Miete von 2.000 € versehentlich auf Konto 4211 (Lager-Miete) statt 4210 (Büro-Miete) gebucht. Die Originalbuchung vom 01.06. soll erhalten bleiben.
+> ➜ Auf dem gebuchten Sachposten → Funktion „Transaktion stornieren" → Stornobuchung erzeugen.
+> **Ergebnis:** System erzeugt eine Gegenbuchung (Haben an 4211 2.000 € / Soll an 4210 2.000 €) mit `Reversed by Entry No.` = Original-Posten-Nr. Der Prüfpfad bleibt erhalten.
+
+**Beispiel 2 — Massenstorno bei fehlerhaftem Import:**
+> Ein Import hat 500 Buchungszeilen mit falschem Buchungsdatum (01.07. statt 01.06.) erzeugt. Der Fehler fällt nach dem Buchen auf.
+> ➜ Filter auf die 500 gebuchten Zeilen → `Reverse`-Funktion mit `Reverse Posting Date = 01.06.`.
+> **Ergebnis:** 500 Stornobuchungen + 500 korrekte Neubuchungen in einem Lauf.
+
+---
+
+## 4.27 MwSt-Klauseln (VAT Clauses)
+
+> **Namensraum:** `Microsoft.Finance.VAT.Clause`
+> **Kern-Tabelle:** `VATClause.Table.al` (470)
+
+MwSt-Klauseln sind Textbausteine, die auf Rechnungen gedruckt werden — z.B. „Steuerfreie innergemeinschaftliche Lieferung“ oder „Reverse Charge".
+
+```al
+field("VAT Clause Code"; Code[20])
+field("Description"; Text[100])    // Textbaustein für den Belegdruck
+```
+
+**Beispiel 1 — Innergemeinschaftliche Lieferung korrekt ausweisen:**
+> Das Unternehmen liefert nach Frankreich. Auf der Rechnung muss der Hinweis „Steuerfreie innergemeinschaftliche Lieferung (§4 Nr. 1b UStG)" erscheinen.
+> ➜ `VAT Clause = IGLIEFERUNG` mit dem Textbaustein. Im VAT Posting Setup wird der Klausel-Code der Kombination `EU/NORMAL` zugewiesen.
+> **Ergebnis:** Jede EU-Rechnung druckt automatisch den korrekten Gesetzestext — kein manuelles Einfügen durch den Sachbearbeiter.
+
+**Beispiel 2 — Reverse Charge bei Bauleistungen:**
+> Das Unternehmen beauftragt einen Subunternehmer (Bauleistung §13b UStG). Die Rechnungseingangs-Prüfung erfordert den Vermerk „Steuerschuldnerschaft des Leistungsempfängers".
+> ➜ `VAT Clause = REV-CHARGE` im `VAT Posting Setup` für die Einkaufskombination.
+> **Ergebnis:** Die Eingangsrechnung zeigt den Hinweis, der Buchhalter weiß, dass er die Reverse-Charge-Meldung abgeben muss.
+
+---
+
+## 4.28 MwSt-Satzänderung (VAT Rate Change)
+
+> **Namensraum:** `Microsoft.Finance.VAT.RateChange`
+> **Kern-Tabellen:** `VATRateChangeSetup.Table.al` (5500), `VATRateChangeConversion.Table.al` (5501)
+
+Tool zum Umstellen aller MwSt-Einrichtungen bei gesetzlichen Satzänderungen — z.B. von 19% auf 16% und zurück.
+
+**Beispiel 1 — Temporäre MwSt-Senkung 19% → 16%:**
+> Die Regierung senkt die MwSt befristet von 19% auf 16% (6 Monate). Alle `VAT Posting Setup`-Einträge mit 19% müssen umgestellt werden.
+> ➜ `VAT Rate Change Setup`: Quelle 19%, Ziel 16%, `VAT Bus. Posting Group` = alle. `VAT Product Posting Group` = NORMAL. Ausführen.
+> **Ergebnis:** Alle 19%-Einträge in `VAT Posting Setup` werden auf 16% geändert. Die betroffenen `Gen. Product Posting Group`-Konvertierungen werden protokolliert.
+
+**Beispiel 2 — Rückumstellung mit Protokollierung:**
+> Nach 6 Monaten steigt die MwSt wieder auf 19%. Der Buchhalter führt die Rate Change rückwärts aus.
+> ➜ `VAT Rate Change Setup`: Quelle 16%, Ziel 19%. Der `VATRateChangeLogEntry` protokolliert alte und neue Werte.
+> **Ergebnis:** Revisionssichere Dokumentation aller MwSt-Änderungen. Kein manuelles Anpassen von 50+ VAT Posting Setup-Zeilen.
+
+---
+
+## 4.29 Sales Tax (US/CA)
+
+> **Namensraum:** `Microsoft.Finance.SalesTax`
+> **Kern-Tabellen:** `TaxSetup.Table.al` (161), `TaxArea.Table.al` (162), `TaxJurisdiction.Table.al` (163)
+
+Sales Tax ist das nordamerikanische Pendant zur MwSt — komplexer durch Bundesstaaten-, County- und City-Steuern (Tax Areas + Tax Jurisdictions).
+
+**Beispiel 1 — Ein US-Unternehmen richtet Sales Tax für Texas ein:**
+> Das Unternehmen verkauft in Texas (State Tax 6.25%) und Dallas (City Tax 1%).
+> ➜ `Tax Area = TEXAS-DALLAS` mit `Tax Jurisdiction = TEXAS (6.25%)` + `DALLAS (1.0%)`. `Tax Setup` verknüpft die Kombination mit dem korrekten Steuerkonto.
+> **Ergebnis:** Bei Rechnung an einen texanischen Kunden berechnet das System automatisch 7.25% Sales Tax — aufgeteilt auf State- und City-Steuer für die Meldung.
+
+**Beispiel 2 — Sales Tax Groups für Kundensteuerbefreiung:**
+> Ein Kunde hat eine Tax Exemption (Steuerbefreiungsnummer).
+> ➜ `Tax Group = STEUERFREI` mit `Tax % = 0` auf dem Kunden hinterlegen. Im `Tax Setup` wird `Tax Area = TEXAS-DALLAS` mit der Tax Group verknüpft.
+> **Ergebnis:** Das System erkennt die Steuerbefreiung und berechnet 0% — trotz Texas-Dallas-Konfiguration.
+
+> ⚠️ **Hinweis:** Sales Tax (`Microsoft.Finance.SalesTax`) ist technisch getrennt von VAT (`Microsoft.Finance.VAT.*`). EU-Unternehmen arbeiten ausschließlich mit VAT.
+
+---
+
+## 4.30 Rollencenter (Finanzwesen)
+
+> **Namensraum:** `Microsoft.Finance.RoleCenters`
+> **Profile/Seiten:** `Accountant.Profile.al`, `AccountingManager.Profile.al`, `BookKeeper.Profile.al`, `Finance.Profile.al`
+
+BC28 liefert vorkonfigurierte Rollencenter für Finanzanwender:
+
+| Profil | Zielgruppe | Kern-Cues |
+|---|---|---|
+| **Buchhalter (Accountant)** | Tägliche Buchhaltung, OP-Verwaltung | `Finance Cue`: OP-Liste, Liquidität |
+| **Leiter Buchhaltung** | Monatsabschluss, Kontenplan, Budget | `Account Payable Cue`: Kreditorensalden |
+| **Finanzmanager** | GuV, Bilanz, Cashflow-Reporting | `Finance Performance`: KPIs |
+| **Bilanzbuchhalter (Bookkeeper)** | Abschlussvorbereitung, Abstimmung | Fibu-Journale, Sachposten |
+
+**Beispiel 1 — Ein neuer Buchhalter startet mit dem Accountant-Rollencenter:**
+> Der Buchhalter meldet sich an und sieht sofort: OP-Liste (Debitoren/Kreditoren), Fibu-Journale, Bankabstimmung — alles auf einer Seite.
+> ➜ Profil `Accountant` zuweisen, keine weiteren Personalisierungen.
+> **Ergebnis:** Der Buchhalter findet alle täglichen Aufgaben ohne Navigation durch Menüs. Die `Finance Cue`-Kachel zeigt offene Debitorenposten als rote Warnung wenn überfällig.
+
+**Beispiel 2 — CFO-Dashboard mit KPIs:**
+> Der Finanzchef benötigt keine Journal-Seiten, sondern aktuelle KPIs: Umsatz, EBIT, Cashflow, Forderungslaufzeit.
+> ➜ Profil `Finance Manager` oder `Business Manager` mit `Finance Performance`-Seite.
+> **Ergebnis:** Ein Dashboard mit Diagrammen und Ampeln. Drill-Through in die Account Schedules bei Abweichungen.
+
+---
+
+## 4.31 Analyseansichten (Analysis Views)
+
+> **Namensraum:** `Microsoft.Finance.Analysis`
+> **Kern-Tabellen:** `AnalysisView.Table.al` (110), `AnalysisViewEntry.Table.al` (111), `AnalysisViewFilter.Table.al` (112)
+>
+> Analyseansichten verdichten Sachposten nach benutzerdefinierten Dimensionen für schnelle Ad-hoc-Analysen — vergleichbar mit OLAP-Cubes, direkt in BC.
+
+```al
+field("Analysis View Code"; Code[10])
+field("Analysis View Name"; Text[50])
+field("Dimension 1..4 Code"; Code[20])    // Bis zu 4 Dimensionen
+field("Account Source"; Enum)              // G/L Accounts oder Cash Flow
+field("Date Compression"; Enum)            // Day, Week, Month, Quarter, Year
+```
+
+**Beispiel 1 — Controller erstellt eine Umsatzanalyse nach Vertreter und Region:**
+> Der Vertriebscontroller möchte Umsätze nach Vertreter und Region auswerten — rollierend über 12 Monate.
+> ➜ `Analysis View = UMSATZANALYSE`: Dimensionen = VERTRETER, REGION, `Account Source = G/L Accounts`, Filter auf Erlöskonten 8400..8499.
+> **Ergebnis:** Die Matrix-Ansicht (`Analysis by Dimensions`) zeigt: Vertreter Müller hat in Region NORD 245.000 € Umsatz. Drill-Down in die Original-Sachposten möglich.
+
+**Beispiel 2 — Budget-Ist-Vergleich in Analyseansicht:**
+> Der Abteilungsleiter möchte ein Budget-Ist-Diagramm für seine Kostenstelle.
+> ➜ `Analysis View = BUDGET-KST1`: Budget-Daten einbeziehen (`AnalysisAccountSource = GL Accounts & Budgets`), Dimension KOSTENSTELLE = KST1.
+> **Ergebnis:** Die Matrix zeigt IST-Werte und BUDGET-Werte nebeneinander — Abweichungen farblich markiert.
+
+---
+
+## 4.32 Abhängige Tabellen & Codeunits
 
 | Tabelle/Codeunit | ID | Verwendung |
 |---|---|---|
 | **General Ledger Setup** | 98 | Singleton-Einrichtung |
-| **G/L Account** | 15 | Sachkonten |
+| **G/L Account** | 15 | Sachkonten, Kontenplan |
 | **G/L Entry** | 17 | Gebuchte Sachposten |
-| **Gen. Journal Line** | 81 | Fibu-Buchungszeilen |
+| **Gen. Journal Template** | 80 | Buchungsjournal-Vorlagen |
+| **Gen. Journal Batch** | 81 | Buchungsjournal-Stapel |
+| **Gen. Journal Line** | 82 | Fibu-Buchungszeilen |
+| **Gen. Business Posting Group** | 110 | Geschäftsbuchungsgruppen |
+| **Gen. Product Posting Group** | 111 | Produktbuchungsgruppen |
+| **General Posting Setup** | 252 | Buchungsmatrix (Kontenzuordnung) |
 | **VAT Posting Setup** | 325 | MwSt-Buchungsmatrix |
+| **VAT Entry** | 254 | Gebuchte MwSt-Posten |
+| **VAT Statement** | 317 | MwSt-Abrechnung |
+| **VAT Clause** | 470 | MwSt-Klauseln |
+| **VAT Rate Change Setup** | 5500 | MwSt-Satzänderung |
 | **Currency** | 4 | Währungen |
+| **Currency Exchange Rate** | 330 | Wechselkurse |
 | **Dimension** | 348 | Dimensionen |
 | **Dimension Value** | 349 | Dimensionswerte |
-| **User Setup Management** | Codeunit | Buchungsdatum-Prüfungen, Datumsformel-Berechnung |
-| **Dimension Management** | Codeunit | Dimensionsset-Verwaltung, Popup |
-| **Feature Telemetry** | Codeunit | Nutzungsverfolgung |
-
----
+| **Account Schedule Name** | 91 | Finanzberichts-Definitionen |
+| **Account Schedule Line** | 92 | Finanzberichts-Zeilen |
+| **Column Layout** | 93 | Finanzberichts-Spalten |
+| **Analysis View** | 110 | Analyseansichten |
+| **Analysis View Entry** | 111 | Verdichtete Analyseposten |
+| **GL Budget Name** | 89 | Budget-Namen |
+| **GL Budget Entry** | 90 | Budget-Einträge |
+| **Deferral Header** | 1700 | Abgrenzungs-Kopf |
+| **Deferral Line** | 1701 | Abgrenzungs-Zeilen |
+| **Allocation Account** | 1300 | Kontierungsschlüssel |
+| **IC Partner** | 410 | Intercompany-Partner |
+| **IC Outbox Transaction** | 421 | IC-Ausgangstransaktionen |
+| **Consolidation Setup** | 96 | Konsolidierungseinrichtung |
+| **Business Unit** | 97 | Konsolidierungs-Mandanten |
+| **Cust. Ledger Entry** | 21 | Debitorenposten |
+| **Vendor Ledger Entry** | 25 | Kreditorenposten |
+| **Bank Account** | 270 | Bankkonten |
+| **Bank Acc. Reconciliation** | 273 | Bankabstimmung |
+| **Fixed Asset** | 5600 | Anlagenkarte |
+| **FA Depreciation Book** | 5612 | AfA-Bücher |
+| **FA Ledger Entry** | 5614 | Anlagenposten |
+| **Tax Area** | 162 | Sales Tax Gebiete (US/CA) |
+| **Tax Jurisdiction** | 163 | Sales Tax Jurisdiktionen |
+| **User Setup Management** | Codeunit | Buchungsdatum-Prüfungen |
+| **GenJnlCheckLine** | Codeunit | Journal-Zeilenvalidierung |
+| **GenJnlPostLine** | Codeunit | Buchungslogik |
+| **Dimension Management** | Codeunit | Dimensionsset-Verwaltung |
+| **Payment Tolerance Management** | Codeunit | Zahlungstoleranz-Logik |
+| **DimCorrectionRun** | Codeunit | Dimensionskorrektur |
+| **GenJnlApply** | Codeunit | Zahlungsausgleich |
 
 | [← Zurück zur Übersicht]({{ '/index' | relative_url }}) | [Weiter: Vertrieb & Marketing →]({{ '/05-sales-marketing/' | relative_url }}) |
