@@ -1,11 +1,11 @@
 ---
 title: "FAQ — Fachkonzepte"
 ---
-# 19.1 Rabattbuchung: Rechnungsrabatt vs. Skonto
+# 20.1 Rabattbuchung: Rechnungsrabatt vs. Skonto
 
 > **TL;DR:** Rechnungsrabatt = unabhängig vom Zahlungszeitpunkt. Skonto = für frühzeitige Zahlung. Unterschiedliche Konten in der Buchungsmatrix.
 
-> 📄 **[← FAQ-Übersicht]({{ '/19-faq/' | relative_url }})**
+> 📄 **[← FAQ-Übersicht]({{ '/20-faq/' | relative_url }})**
 
 ---
 
@@ -37,4 +37,4 @@ Die `Discount Posting`-Option in der Einrichtung steuert **nur** Zeilen- und Rec
 
 ---
 
-| [← FAQ-Übersicht]({{ '/19-faq/' | relative_url }}) | [Methodik & Quellen →]({{ '/19-faq/methodik-quellen/' | relative_url }}) |
+| [← FAQ-Übersicht]({{ '/20-faq/' | relative_url }}) | [Methodik & Quellen →]({{ '/20-faq/methodik-quellen/' | relative_url }}) |

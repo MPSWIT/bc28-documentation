@@ -1,11 +1,11 @@
 ---
 title: "FAQ — Jekyll-Struktur"
 ---
-# 19.3 Jekyll: Flache Dateien vs. Unterordner
+# 20.3 Jekyll: Flache Dateien vs. Unterordner
 
 > **TL;DR:** `thema/index.md` erzeugt saubere URLs (`/04-finance/fibu-einrichtung/`) ohne `.html`-Endung. Das ist das native Jekyll-Muster.
 
-> 📄 **[← FAQ-Übersicht]({{ '/19-faq/' | relative_url }})**
+> 📄 **[← FAQ-Übersicht]({{ '/20-faq/' | relative_url }})**
 
 ---
 
@@ -73,4 +73,4 @@ Ein Python-Skript hat alle 24 `.md`-Dateien der Kapitel 1, 4, 5, 6 automatisch u
 
 ---
 
-| [← FAQ-Übersicht]({{ '/19-faq/' | relative_url }}) | [→ Zurück zur Startseite]({{ '/index' | relative_url }}) |
+| [← FAQ-Übersicht]({{ '/20-faq/' | relative_url }}) | [→ Zurück zur Startseite]({{ '/index' | relative_url }}) |

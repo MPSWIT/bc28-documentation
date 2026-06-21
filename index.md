@@ -90,10 +90,13 @@ Die Dokumentation folgt der App-Struktur von BC28. Ausgearbeitete Kapitel zeigen
 ### 18. Migration & Upgrade
 🚧 in Vorbereitung
 
-### 19. [FAQ — Ausgewählte Fragen](19-faq/)
-&nbsp;&nbsp;├─ [Rabatt vs. Skonto](19-faq/fachkonzepte/)
-&nbsp;&nbsp;├─ [Methodik & Quellen](19-faq/methodik-quellen/)
-&nbsp;&nbsp;└─ [Jekyll-Struktur](19-faq/jekyll-struktur/)
+### 19. ToDo
+🚧 in Vorbereitung
+
+### 20. [FAQ — Ausgewählte Fragen](20-faq/)
+&nbsp;&nbsp;├─ [Rabatt vs. Skonto](20-faq/fachkonzepte/)
+&nbsp;&nbsp;├─ [Methodik & Quellen](20-faq/methodik-quellen/)
+&nbsp;&nbsp;└─ [Jekyll-Struktur](20-faq/jekyll-struktur/)
 
 ## Quellen
 

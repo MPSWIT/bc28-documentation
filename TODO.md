@@ -131,7 +131,15 @@
 - [ ] 18.2 Breaking Changes in BC28
 - [ ] 18.3 Datenmigration (RapidStart, Configuration Packages)
 
+## 19. ToDo
+- [ ] Inhalt folgt
+
+## 20. FAQ — Ausgewählte Fragen
+- [x] 20.1 Rabatt vs. Skonto (Fachkonzept)
+- [x] 20.2 Methodik & Quellen (XLF, RAG, Quellcode-Verifikation)
+- [x] 20.3 Jekyll-Struktur (flache Dateien vs. Unterordner)
+
 ---
 
-**Status:** 🟢 4/18 Kapitel abgeschlossen (1, 4, 5, 6) — alle mit Subpages  
+**Status:** 🟢 5/20 Kapitel abgeschlossen (1, 4, 5, 6, 20) — alle mit Subpages  
 **Quellen:** BC28 OnPrem Artifacts (`~/ai/onprem/28.1.49838.49886/at/`), [BCApps Reference](https://microsoft.github.io/BCApps), [Microsoft Learn](https://learn.microsoft.com/dynamics365/business-central/)

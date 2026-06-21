@@ -1,11 +1,11 @@
 ---
 title: "FAQ — Methodik & Quellen"
 ---
-# 19.2 Methodik & Quellen
+# 20.2 Methodik & Quellen
 
 > **TL;DR:** Alle Feldübersetzungen und fachlichen Details werden gegen den lokalen Quellcode und die offizielle XLF-Übersetzungsdatei verifiziert — nicht aus dem LLM-Trainingswissen.
 
-> 📄 **[← FAQ-Übersicht]({{ '/19-faq/' | relative_url }})**
+> 📄 **[← FAQ-Übersicht]({{ '/20-faq/' | relative_url }})**
 
 ---
 
@@ -68,4 +68,4 @@ Ja. Die konkreten Feldnamen, XML-Dokumentation und deutschen Übersetzungen stam
 
 ---
 
-| [← FAQ-Übersicht]({{ '/19-faq/' | relative_url }}) | [Jekyll-Struktur →]({{ '/19-faq/jekyll-struktur/' | relative_url }}) |
+| [← FAQ-Übersicht]({{ '/20-faq/' | relative_url }}) | [Jekyll-Struktur →]({{ '/20-faq/jekyll-struktur/' | relative_url }}) |
