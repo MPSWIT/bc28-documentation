@@ -26,9 +26,13 @@ field(2; "Discount Posting"; Option)
 ```
 
 **Beispiel 1 — Trennung von Zeilen- und Rechnungsrabatten:**
-> Der Elektronikhändler *TechTrading* erhält vom Hersteller 10 % Zeilenrabatt auf Komponenten und zusätzlich 2 % Rechnungsrabatt bei Zahlung innerhalb 14 Tagen.
+> Der Elektronikhändler *TechTrading* erhält vom Hersteller 10 % Zeilenrabatt auf Komponenten und zusätzlich 3 % Rechnungsrabatt ab 10.000 € Bestellwert (kein Skonto — der Rechnungsrabatt wird unabhängig vom Zahlungszeitpunkt gewährt).
 > ➜ `Discount Posting = All Discounts`
-> **Ergebnis:** Beide Rabattarten werden separat auf die Konten `Purch. Line Disc. Account` und `Purch. Inv. Disc. Account` gebucht.
+> **Ergebnis:** Beide Rabattarten werden separat auf die Konten `Purch. Line Disc. Account` und `Purch. Inv. Disc. Account` gebucht. Skonti werden dagegen über die **Zahlungsbedingungen** (`Payment Terms`, Tab. 3) gesteuert — sie sind kein Rechnungsrabatt.
+
+**Beispiel 1b — Unterscheidung Rechnungsrabatt vs. Skonto:**
+> Derselbe Hersteller gewährt zusätzlich 2 % **Skonto** bei Zahlung innerhalb 14 Tagen. Dies wird NICHT über `Discount Posting` konfiguriert, sondern in den **Zahlungsbedingungen** (`Payment Terms → Discount % = 2`, `Discount Date Calc. = 14D`).
+> **Ergebnis:** Der Skonto wird beim Zahlungsausgleich automatisch berechnet und auf das `Pmt. Disc. Account` (Buchungsmatrix) gebucht.
 
 ### Feld 6: `Receipt on Invoice` — Lieferschein b. EK-Rechnung
 

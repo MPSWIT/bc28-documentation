@@ -36,9 +36,9 @@ field(2; "Discount Posting"; Option)
 > **Ergebnis:** Jeder Zeilenrabatt wird auf das Konto aus `Gen. Posting Setup → Sales Line Disc. Account` gebucht.
 
 **Beispiel 2 — B2B-Großhändler bucht Rechnungsrabatte:**
-> Der Großhändler *Industriebedarf Süd* gewährt Stammkunden 3 % Rechnungsrabatt bei Zahlung innerhalb 10 Tagen.
+> Der Großhändler *Industriebedarf Süd* gewährt Stammkunden ab 5.000 € Auftragswert einen Rechnungsrabatt von 3 %. Dieser Rabatt gilt unabhängig vom Zahlungszeitpunkt.
 > ➜ `Discount Posting = Invoice Discounts`
-> **Ergebnis:** Rechnungsrabatte werden separat auf `Sales Inv. Disc. Account` gebucht. Transparente Ausweisung in der GuV.
+> **Ergebnis:** Rechnungsrabatte werden separat auf `Sales Inv. Disc. Account` gebucht. Transparente Ausweisung in der GuV. (Hinweis: 2 % Skonto bei Zahlung innerhalb 10 Tagen ist dagegen kein Rechnungsrabatt, sondern ein **Skonto** — konfiguriert in den **Zahlungsbedingungen** `Payment Terms`.)
 
 **Beispiel 3 — Kleinstbetrieb ohne Rabattaufteilung:**
 > Der Handwerksbetrieb *Meier Sanitär* gewährt selten Rabatte und möchte seine Buchhaltung einfach halten.
