@@ -1,22 +1,23 @@
 ---
 title: "Finanzwesen"
 ---
-# 4. Finanzwesen — General Ledger Setup
+# 4. Finanzwesen — Fibu-Einrichtung
 
 > **Tabelle 98:** `GeneralLedgerSetup.Table.al`
-> **Namespace:** `Microsoft.Finance.GeneralLedger.Setup`
-> **Page:** `GeneralLedgerSetup.Page.al`
-> **Typ:** Singleton (nur ein Datensatz, Primary Key = fixer Code)
+> **Namensraum:** `Microsoft.Finance.GeneralLedger.Setup`
+> **Seite:** `GeneralLedgerSetup.Page.al`
+> **Typ:** Singleton (genau ein Datensatz, Primärschlüssel = fester Code)
 
-Die Tabelle **General Ledger Setup (98)** ist die zentrale Schaltstelle der gesamten Finanzbuchhaltung.
+Die Tabelle **Fibu-Einrichtung (98)** ist die zentrale Schaltstelle der gesamten Finanzbuchhaltung.
 Sie steuert Buchungszeiträume, MwSt-Verhalten, Rundung, Dimensionen und Zahlungstoleranzen.
 
 ---
 
 ## 4.1 Buchungszeiträume
 
-### Feld 2: `Allow Posting From` (Date)
-Earliest date allowed for posting transactions to the general ledger.
+### Feld 2: `Allow Posting From` — Frühestes Buchungsdatum
+
+Legt das früheste Datum fest, ab dem in die Finanzbuchhaltung gebucht werden darf.
 
 ```al
 field(2; "Allow Posting From"; Date)
@@ -34,72 +35,85 @@ field(2; "Allow Posting From"; Date)
 }
 ```
 
-**Beispiel 1 — Geschäftsjahresbeginn:**
-> `Allow Posting From = 01.01.2026`, `Allow Posting To = leer`
-> → Alle Buchungen ab dem 01.01.2026 sind erlaubt. Kein Enddatum — Buchungen bis in die Zukunft möglich.
+**Beispiel 1 — Das Unternehmen startet mit BC28 zum 01.01.2026:**
+> Die Buchhaltung möchte alle Buchungen ab dem Geschäftsjahresbeginn am 01.01.2026 zulassen. Ein Enddatum wird nicht gesetzt, da das Geschäftsjahr noch läuft.
+> ➜ `Allow Posting From = 01.01.2026`, `Allow Posting To = leer`
+> **Ergebnis:** Jede Buchung mit Datum ≥ 01.01.2026 wird angenommen. Versehentliche Buchungen aus dem Vorjahr sind blockiert.
 
-**Beispiel 2 — Monatsabschluss-Only:**
-> `Allow Posting From = 01.06.2026`, `Allow Posting To = 30.06.2026`
-> → Nur Buchungen im Juni 2026 sind erlaubt. Versucht jemand am 05.07.2026 zu buchen, erscheint ein Fehler via `CheckAllowedPostingDates()`.
+**Beispiel 2 — Der Monatsabschluss Juni 2026 läuft:**
+> Die Finanzabteilung hat den Juni abgeschlossen und möchte nun die Juli-Buchungen kontrolliert freigeben. Nur Buchungen im Juni sollen noch möglich sein, um Abschlusskorrekturen zu erlauben.
+> ➜ `Allow Posting From = 01.06.2026`, `Allow Posting To = 30.06.2026`
+> **Ergebnis:** Versucht ein Sachbearbeiter am 05.07.2026 zu buchen, erscheint ein Fehler über `CheckAllowedPostingDates()`. Die Juni-Periode bleibt für Korrekturen offen, der Juli ist gesperrt.
 
-**Beispiel 3 — Offene Periode mit DateFormula:**
-> `Allow Posting From DateFormula = "-1M"`, `Allow Posting To DateFormula = "CM"` (aktueller Monat)
-> → Dynamisch: Heute = 21.06.2026 → Buchungen vom 21.05.2026 bis 30.06.2026 erlaubt. Am 01.07.2026 verschiebt sich der Zeitraum automatisch.
+**Beispiel 3 — Ein rollierender Buchungszeitraum mit dynamischer Formel:**
+> Das Unternehmen möchte, dass immer der aktuelle und der vorherige Monat offen sind, ohne jedes Mal manuell Daten ändern zu müssen. Die Buchhaltung konfiguriert dynamische Datumsformeln.
+> ➜ `Allow Posting From DateFormula = "-1M"`, `Allow Posting To DateFormula = "CM"`
+> **Ergebnis:** Am 21.06.2026 sind Buchungen vom 21.05.2026 bis 30.06.2026 erlaubt. Am 01.07.2026 verschiebt sich das früheste Datum automatisch auf 01.06.2026 und das Enddatum auf 31.07.2026 — ohne dass jemand die Einrichtung anfassen muss.
 
-**Wichtiger Code:**
-- `CheckDateRange()` (lokal) — kombiniert feste Daten mit DateFormulas
-- `FirstAllowedPostingDate()` — berücksichtigt auch `Inventory Period` (keine Buchung in gesperrte Lagerperiode)
-- `IsPostingAllowed(PostingDate: Date): Boolean` — Integration-Event `OnAfterIsPostingAllowed`
+**Wichtige Codestellen:**
+- `CheckDateRange()` (lokal) — kombiniert feste Daten mit Datumsformeln
+- `FirstAllowedPostingDate()` — berücksichtigt zusätzlich `Inventory Period` (keine Buchung in gesperrte Lagerperiode)
+- `IsPostingAllowed(PostingDate: Date): Boolean` — Integrationsereignis `OnAfterIsPostingAllowed`
 - `CheckAllowedPostingDates()` delegiert an **Codeunit "User Setup Management"**
 
 ---
 
-### Feld 4: `Register Time` (Boolean)
-Records posting time in addition to posting date for audit trail.
+### Feld 4: `Register Time` — Buchungszeit speichern
 
-**Beispiel 1:**
-> `Register Time = True`
-> → Jede gebuchte Transaktion erhält zusätzlich zum Buchungsdatum einen Zeitstempel. Nachvollziehbar, wann genau innerhalb eines Tages gebucht wurde. Nützlich für Revisionssicherheit.
+Legt fest, ob zusätzlich zum Buchungsdatum auch die Uhrzeit der Buchung gespeichert wird.
 
-**Beispiel 2:**
-> `Register Time = False`
-> → Default. Nur das Buchungsdatum wird gespeichert. Spart Speicherplatz in den Ledger-Entry-Tabellen.
+**Beispiel 1 — Ein Wirtschaftsprüfer verlangt minutengenaue Nachvollziehbarkeit:**
+> Das Unternehmen wird testiert und der Prüfer möchte sehen, in welcher Reihenfolge die Buchungen am Abschlusstag vorgenommen wurden. Wer hat wann die letzte Abschlussbuchung erstellt?
+> ➜ `Register Time = Ja`
+> **Ergebnis:** Jede gebuchte Transaktion erhält zusätzlich zum Buchungsdatum einen Zeitstempel. Der Prüfer kann die chronologische Reihenfolge aller Buchungen am 31.12.2026 exakt nachvollziehen.
 
-**Beispiel 3 — Kombination mit Job Queue:**
-> `Post with Job Queue = True` + `Register Time = True`
-> → Auch Hintergrundbuchungen erhalten Zeitstempel. Bei Massenbuchungen (z.B. Zinsrechnung) kann man exakt sehen, welche Transaktion wann verarbeitet wurde.
+**Beispiel 2 — Ein Unternehmen mit geringem Transaktionsvolumen:**
+> Eine kleine Agentur mit 50 Buchungen pro Monat benötigt keine minutiöse Zeiterfassung. Das Buchungsdatum reicht für die Nachvollziehbarkeit völlig aus.
+> ➜ `Register Time = Nein`
+> **Ergebnis:** Nur das Datum wird gespeichert. Die Ledger-Entry-Tabellen bleiben kleiner.
+
+**Beispiel 3 — Hintergrundbuchungen mit Job Queue:**
+> Das Unternehmen verarbeitet monatlich 5.000 automatische Zinsbuchungen über die Auftragswarteschlange. Die Finanzabteilung möchte dennoch wissen, wann genau welche Zinsbuchung verarbeitet wurde, um bei Rückfragen den exakten Verarbeitungszeitpunkt belegen zu können.
+> ➜ `Post with Job Queue = Ja` + `Register Time = Ja`
+> **Ergebnis:** Trotz Hintergrundverarbeitung erhält jede der 5.000 Buchungen einen individuellen Zeitstempel — vollständige Nachvollziehbarkeit auch bei Massenbuchungen.
 
 ---
 
-### Feld 169: `Posting Preview Type` (Enum "Posting Preview Type")
-Determines the type of posting preview shown to users before finalizing transactions.
+### Feld 169: `Posting Preview Type` — Art der Buchungsvorschau
 
-**Beispiel 1:**
-> `Posting Preview Type = Detailed`
-> → Vor jeder Buchung wird eine Vorschau aller entstehenden Ledger-Entries (Sachposten, Debitoren/Kreditoren, MwSt) angezeigt. Der Benutzer kann prüfen, bevor final gebucht wird.
+Bestimmt, welche Vorschau dem Benutzer vor der endgültigen Buchung angezeigt wird.
 
-**Beispiel 2:**
-> `Posting Preview Type = None` (Vorschau deaktiviert)
-> → Keine Vorschau. Buchungen werden sofort ausgeführt. Erhöht die Geschwindigkeit bei Routine-Buchungen, birgt aber Fehlerrisiko.
+**Beispiel 1 — Ein neuer Buchhalter soll Buchungen vor dem Buchen prüfen:**
+> Das Unternehmen hat einen neuen Junior-Buchhalter eingestellt. Der Finanzleiter möchte, dass vor jeder Buchung eine detaillierte Vorschau der entstehenden Sachposten, Debitoren/Kreditoren-Posten und MwSt-Posten angezeigt wird.
+> ➜ `Posting Preview Type = Detailliert`
+> **Ergebnis:** Bei jeder Buchung erscheint die Vorschautabelle **G/L Entry Posting Preview** mit allen betroffenen Konten. Der Junior kann prüfen und dann final buchen.
 
-**Beispiel 3 — Zugriff auf Vorschau-Objekte:**
-> Bei `Detailed` wird die Preview-Tabelle **G/L Entry Posting Preview** befüllt. Entwickler können darauf im `OnBeforePost`-Event einer Sales-Posting-Codeunit zugreifen.
+**Beispiel 2 — Erfahrene Sachbearbeiter buchen täglich hunderte Rechnungen:**
+> In der Kreditorenbuchhaltung werden täglich 300 Eingangsrechnungen erfasst und gebucht. Eine Vorschau würde den Arbeitsfluss massiv verlangsamen. Die Sachbearbeiter kennen ihre Buchungsmatrix auswendig.
+> ➜ `Posting Preview Type = Keine`
+> **Ergebnis:** Keine Vorschau — Buchungen werden sofort ausgeführt. Deutlich schneller bei Routinevorgängen, aber ohne Kontrollmöglichkeit vor dem Buchen.
+
+**Beispiel 3 — Die Vorschau dient als Vorab-Prüfung für den Vertrieb:**
+> Ein Vertriebsmitarbeiter erstellt eine komplexe Ausgangsrechnung mit Teillieferungen, Anzahlungen und Skonto-Staffeln. Vor der finalen Buchung möchte er in der Vorschau sehen, ob die MwSt korrekt aufgeteilt wird und ob alle Debitorenkonten stimmen.
+> ➜ `Posting Preview Type = Detailliert` — zusätzlich über das Ereignis `OnBeforePost` erweitert
+> **Ergebnis:** Die Vorschau-Tabelle `VATEntryPostingPreview.Table.al` zeigt die MwSt-Aufteilung. Ein Fehler in der Buchungsmatrix fällt sofort auf, bevor echte Posten entstehen.
 
 **Relevante Objekte:**
-- `GLEntryPostingPreview.Table.al` — Vorschau-Tabelle
+- `GLEntryPostingPreview.Table.al` — Sachposten-Vorschau
 - `VATEntryPostingPreview.Table.al` — MwSt-Posting-Vorschau
 
 ---
 
 ## 4.2 Dimensionen
 
-### Feld 79/80: `Global Dimension 1 Code` / `Global Dimension 2 Code` (Code[20])
-Primary and secondary global dimension codes used throughout the system.
+### Felder 79/80: `Global Dimension 1 Code` / `Global Dimension 2 Code` — Globale Dimensionen
+
+Die beiden globalen Dimensionen, die im gesamten System für Analyse und Berichtswesen verwendet werden.
 
 ```al
 field(79; "Global Dimension 1 Code"; Code[20])
 {
-    Editable = false;       // Nicht direkt editierbar!
+    Editable = false;       // Nicht direkt bearbeitbar!
     TableRelation = Dimension;
     trigger OnValidate()
     begin
@@ -108,21 +122,24 @@ field(79; "Global Dimension 1 Code"; Code[20])
 }
 ```
 
-Die Global Dimensions werden **nicht direkt** in dieser Tabelle gesetzt, sondern über die Dimension-Tabelle und `UpdateDimValueGlobalDimNo()`.
+Die globalen Dimensionen werden **nicht direkt** in dieser Tabelle gesetzt, sondern über die Dimension-Tabelle und `UpdateDimValueGlobalDimNo()`.
 
-**Beispiel 1 — Abteilung + Kostenstelle:**
-> `Global Dimension 1 Code = "ABTEILUNG"`, `Global Dimension 2 Code = "KOSTENSTELLE"`
-> → Jede Buchung MUSS eine Abteilung und eine Kostenstelle haben (wenn als `Code Mandatory` auf der Dimension aktiviert). Auf Sachkonten können Standard-Dimensionswerte hinterlegt werden.
+**Beispiel 1 — Ein Filialunternehmen analysiert nach Abteilung und Kostenstelle:**
+> Das Unternehmen betreibt 5 Filialen und möchte alle Buchungen nach Abteilung (welche Filiale) und Kostenstelle (welcher Bereich: Verkauf, Lager, Verwaltung) auswerten können. Auf jedem Sachkonto werden Standardwerte hinterlegt, damit bei Buchungen nicht jedes Mal manuell erfasst werden muss.
+> ➜ `Global Dimension 1 Code = "ABTEILUNG"`, `Global Dimension 2 Code = "KOSTENSTELLE"`
+> **Ergebnis:** Jede Buchung MUSS eine Abteilung und eine Kostenstelle enthalten (wenn auf der Dimension `Code Mandatory = Ja`). Die FlowFields `Cust. Balances Due` und `Vendor Balances Due` auf der Fibu-Einrichtung liefern sofort die Offene-Posten-Liste gefiltert nach Filiale.
 
-**Beispiel 2 — Projekt + Region:**
-> `Global Dimension 1 Code = "PROJEKT"`, `Global Dimension 2 Code = "REGION"`
-> → Alle Reports, FlowFields (`Cust. Balances Due`, `Vendor Balances Due`) und Analyseansichten arbeiten mit diesen beiden Filtern. Der Filter `Global Dimension 1 Filter` auf der GL Setup Page zeigt nur die Summe für die gefilterte Dimension.
+**Beispiel 2 — Ein Projektunternehmen gliedert nach Projekt und Region:**
+> Eine Baufirma mit 30 laufenden Projekten in 3 Bundesländern möchte Deckungsbeiträge pro Projekt und Region sehen. Der Geschäftsführer ruft einmal pro Woche die Analyseansicht auf und filtert nach Projekt/Region.
+> ➜ `Global Dimension 1 Code = "PROJEKT"`, `Global Dimension 2 Code = "REGION"`
+> **Ergebnis:** Alle Berichte und Analyseansichten arbeiten standardmäßig mit diesen beiden Filtern. Die FlowFields `Cust. Balances Due` und `Vendor Balances Due` zeigen sofort: Welcher Kunde schuldet noch Geld — pro Projekt und Region getrennt.
 
-**Beispiel 3 — Nur eine Global Dimension:**
-> `Global Dimension 1 Code = "KOSTENSTELLE"`, `Global Dimension 2 Code = ""`
-> → Nur Kostenstellen sind global pflicht. Andere Dimensionen (Shortcut 3–8) sind optional.
+**Beispiel 3 — Ein Einzelunternehmen braucht nur eine Dimension:**
+> Eine Steuerberatungskanzlei mit 10 Mitarbeitern möchte nur nach Kostenstelle auswerten, braucht aber keine zweite globale Dimension. Die Shortcut-Dimensionen 3–8 werden optional für Kampagnen und Mandanten genutzt.
+> ➜ `Global Dimension 1 Code = "KOSTENSTELLE"`, `Global Dimension 2 Code = ""`
+> **Ergebnis:** Nur Kostenstellen sind global pflicht. Weitere Dimensionen (Shortcut 3–8) können bei Bedarf optional verwendet werden.
 
-**FlowFields, die Global Dimensions nutzen:**
+**FlowFields, die globale Dimensionen nutzen:**
 ```al
 field(44; "Cust. Balances Due"; Decimal)
 {
@@ -133,65 +150,66 @@ field(44; "Cust. Balances Due"; Decimal)
 }
 ```
 
-> ⚠️ **Wichtig für Entwickler:** `Editable = false` — diese Felder werden nur über `UpdateDimValueGlobalDimNo()` (auf Dim-Änderung) gesetzt. Direkter Zugriff über AL wird ignoriert.
+> ⚠️ **Wichtig für Entwickler:** `Editable = false` — diese Felder werden nur über `UpdateDimValueGlobalDimNo()` (bei Dimensionsänderung) gesetzt. Direkter Zugriff über AL wird ignoriert.
 
 ---
 
-### Felder 81–88: `Shortcut Dimension 1..8 Code` (Code[20])
-Shortcut dimension codes for quick access in data entry forms.
+### Felder 81–88: `Shortcut Dimension 1..8 Code` — Schnelldimensionen
 
-**Beispiel 1 — Typische Konfiguration:**
-> Shortcut 1 = Abteilung, Shortcut 2 = Kostenstelle (automatisch aus Global Dim 1 & 2)
-> Shortcut 3 = Vertreter, Shortcut 4 = Region, Shortcut 5 = Kampagne
-> → Auf jeder Buchungsseite erscheinen diese 5 Dimensionen als Schnellzugriff oben im Dim-Bereich.
+Schnellzugriffs-Dimensionen, die auf Buchungsseiten direkt sichtbar sind.
 
-**Beispiel 2 — Nur Shortcut 3–4 belegt:**
-> Shortcut 3 = "PROJEKT", Shortcut 4 = "KOSTENTRÄGER", Shortcut 5–8 = leer
-> → Auf Belegseiten sind nur 4 Dimensionen sichtbar (2 Global + 2 Shortcut). Spart Platz, reicht für einfache Anforderungen.
+**Beispiel 1 — Ein Vertriebsteam benötigt Vertreter und Kampagne:**
+> Das Unternehmen hat 8 Außendienstmitarbeiter und führt regelmäßig Marketing-Kampagnen durch. Auf jeder Verkaufsbelegseite sollen Vertreter und Kampagne als Pflichtfelder erscheinen, damit die Provision und der Kampagnenerfolg auswertbar sind.
+> ➜ Shortcut 1 = "ABTEILUNG" (aus Global Dim 1), Shortcut 2 = "KOSTENSTELLE" (aus Global Dim 2), Shortcut 3 = "VERTRETER", Shortcut 4 = "KAMPAGNE"
+> **Ergebnis:** Auf jeder Buchungsseite erscheinen 4 Dimensionen oben im Dim-Bereich. Der Vertrieb kann direkt Vertreter und Kampagne zuordnen — keine separate Dimensionserfassung nötig.
 
-**Beispiel 3 — Umbenennung einer Shortcut-Dimension:**
-> Shortcut 3 Code wird von "VERTRETER" auf "TEAM" geändert
-> → `UpdateDimValueGlobalDimNo()` aktualisiert alle `Dimension Value`-Einträge: `Global Dimension No.` wird auf 3 gesetzt für den neuen Code, auf 0 für den alten. `Dimension Set Entry` wird ebenfalls via `UpdateGlobalDimensionNo()` synchronisiert.
+**Beispiel 2 — Ein schlankes Setup für eine kleine Firma:**
+> Ein Handwerksbetrieb mit 5 Mitarbeitern möchte nur Abteilung (Global Dim 1) und Kostenstelle (Global Dim 2) sehen. Weitere Dimensionen sind nicht nötig und würden nur verwirren.
+> ➜ Shortcut 3–8 = leer
+> **Ergebnis:** Auf Belegseiten sind nur 2 Dimensionen sichtbar. Übersichtlich für kleine Teams.
 
-**Relevanter Code:**
-- `UpdateDimValueGlobalDimNo(xDimCode, DimCode, ShortcutDimNo)` — lokale Prozedur in Table 98
-- `OnAfterUpdateDimValueGlobalDimNo()` — Integration Event für Extensions
-- **Codeunit "Dimension Management"** — `ShowDimensionSet()` für Popup
+**Beispiel 3 — Umbenennung einer bestehenden Schnelldimension:**
+> Das Unternehmen organisiert sich um: Statt "VERTRETER" soll nun "TEAM" verwendet werden. Der Administrator ändert Shortcut 3 von "VERTRETER" auf "TEAM".
+> ➜ Shortcut 3 von "VERTRETER" auf "TEAM" ändern
+> **Ergebnis:** `UpdateDimValueGlobalDimNo()` setzt für alle Dimensionswerte des neuen Codes die `Global Dimension No.` auf 3, für die alten Werte auf 0. Die `Dimension Set Entry`-Tabelle wird über `UpdateGlobalDimensionNo()` synchronisiert. Alle historischen Buchungen behalten ihre ursprünglichen Dimensionswerte — der neue Code gilt nur für zukünftige Buchungen.
 
----
-
-## 4.3 MwSt / VAT
-
-### Feld 7: `VAT Reporting Date` (Enum "VAT Reporting Date")
-Default VAT reporting date calculation method.
-
-```al
-field(7; "VAT Reporting Date"; Enum "VAT Reporting Date")
-{
-    Caption = 'Default VAT Date';
-}
-```
-
-**Beispiel 1 — Buchungsdatum als VAT-Datum:**
-> `VAT Reporting Date = Posting Date`
-> → Die MwSt wird immer mit dem Buchungsdatum gemeldet. Typisch für IST-Versteuerung.
-
-**Beispiel 2 — Belegdatum als VAT-Datum:**
-> `VAT Reporting Date = Document Date`
-> → Die MwSt wird mit dem Belegdatum gemeldet. Bei einer Rechnung vom 15.06., die erst am 02.07. gebucht wird, erscheint die MwSt im Juni-Zeitraum. Relevant für SOLL-Versteuerung.
-
-**Beispiel 3 — VAT Date Usage ergänzt:**
-> `VAT Reporting Date = Document Date`, `VAT Reporting Date Usage = Disabled`
-> → Die MwSt-Meldung verwendet trotz Einstellung NICHT das Belegdatum, sondern fällt auf Posting Date zurück. Gesteuert über Enum "VAT Reporting Date Usage" (Feld 8).
-
-**Relevanter Code:**
-- `GetVATDate(PostingDate, DocumentDate): Date` — liefert das effektive VAT-Datum
-- `UpdateVATDate(NewDate, VATDateType, var VATDate)` — setzt VAT-Datum wenn Typ übereinstimmt
+**Relevante Codestellen:**
+- `UpdateDimValueGlobalDimNo(xDimCode, DimCode, ShortcutDimNo)` — lokale Prozedur in Tabelle 98
+- `OnAfterUpdateDimValueGlobalDimNo()` — Integrationsereignis für Erweiterungen
+- **Codeunit "Dimension Management"** — `ShowDimensionSet()` für Dimensions-Popup
 
 ---
 
-### Feld 48: `Unrealized VAT` (Boolean)
-Enables unrealized VAT for cash-based VAT reporting.
+## 4.3 Mehrwertsteuer
+
+### Feld 7: `VAT Reporting Date` — Vorgabe MwSt-Datum
+
+Legt fest, nach welchem Datum die MwSt standardmäßig gemeldet wird.
+
+**Beispiel 1 — Ein Unternehmen mit IST-Versteuerung:**
+> Das Unternehmen versteuert nach vereinnahmten Entgelten (IST). Die MwSt soll immer dann gemeldet werden, wenn die Buchung tatsächlich erfolgt — unabhängig vom Rechnungsdatum.
+> ➜ `VAT Reporting Date = Buchungsdatum`
+> **Ergebnis:** Eine Rechnung vom 15.06., die erst am 02.07. gebucht wird, erscheint in der MwSt-Meldung Juli. Die MwSt folgt dem tatsächlichen Buchungsfluss.
+
+**Beispiel 2 — Ein Unternehmen mit SOLL-Versteuerung:**
+> Das Unternehmen versteuert nach vereinbarten Entgelten (SOLL). Die MwSt soll im Monat des Rechnungsdatums erscheinen, auch wenn die Buchung später erfolgt.
+> ➜ `VAT Reporting Date = Belegdatum`
+> **Ergebnis:** Eine Rechnung vom 15.06., die erst am 02.07. gebucht wird, erscheint in der MwSt-Meldung Juni — korrekt nach dem Rechnungsdatum.
+
+**Beispiel 3 — VAT Date Usage schaltet die Vorgabe ab:**
+> Das Unternehmen hat zwar `VAT Reporting Date = Belegdatum` gesetzt, aber der Steuerberater empfiehlt, für einen Übergangszeitraum temporär auf Buchungsdatum umzustellen.
+> ➜ `VAT Reporting Date Usage = Deaktiviert`
+> **Ergebnis:** Trotz der Einstellung `Belegdatum` fällt das System auf `Buchungsdatum` zurück. Gesteuert über das Enum `VAT Reporting Date Usage` (Feld 8).
+
+**Wichtige Prozeduren:**
+- `GetVATDate(PostingDate, DocumentDate): Date` — liefert das effektive MwSt-Datum
+- `UpdateVATDate(NewDate, VATDateType, var VATDate)` — setzt MwSt-Datum wenn Typ übereinstimmt
+
+---
+
+### Feld 48: `Unrealized VAT` — Nicht realisierte MwSt
+
+Aktiviert die Ist-Versteuerung mit nicht realisierter MwSt.
 
 ```al
 trigger OnValidate()
@@ -209,116 +227,138 @@ begin
 end;
 ```
 
-**Beispiel 1 — Ist-Versteuerung:**
-> `Unrealized VAT = True`
-> → MwSt wird erst bei Zahlungseingang fällig (nicht bei Rechnungsstellung). Bei Buchung einer Ausgangsrechnung entsteht eine **unrealisierte MwSt**, die erst beim Zahlungsausgleich realisiert wird. Benötigt entsprechende `VAT Posting Setup`-Einträge.
+**Beispiel 1 — Ein Unternehmen stellt auf IST-Versteuerung um:**
+> Das Unternehmen wechselt von SOLL auf IST-Versteuerung. MwSt soll erst bei Zahlungseingang fällig werden, nicht schon bei Rechnungsstellung. Der Steuerberater hat die entsprechenden `VAT Posting Setup`-Einträge mit `Unrealized VAT Type = Percentage` angelegt.
+> ➜ `Unrealized VAT = Ja`
+> **Ergebnis:** Bei Buchung einer Ausgangsrechnung über 11.900 € (netto 10.000 + 1.900 MwSt) wird die MwSt als nicht realisiert markiert. Erst wenn der Kunde zahlt und der Zahlungsausgleich gebucht wird, wird die MwSt realisiert. Das System setzt automatisch `Prepayment Unrealized VAT = Ja`.
 
-**Beispiel 2 — Soll-Versteuerung ohne Unrealized VAT:**
-> `Unrealized VAT = False`
-> → MwSt wird sofort bei Rechnungsstellung fällig. Die Prüfung im `OnValidate` stellt sicher, dass keine `VAT Posting Setup`-Einträge mit `Unrealized VAT Type = Percentage` existieren (sonst Error).
+**Beispiel 2 — Das Unternehmen behält die SOLL-Versteuerung bei:**
+> Ein Dienstleister mit wenigen, zuverlässigen Kunden bleibt bei der SOLL-Versteuerung. Keine `VAT Posting Setup`-Einträge mit `Unrealized VAT Type = Percentage` existieren.
+> ➜ `Unrealized VAT = Nein`
+> **Ergebnis:** MwSt wird sofort bei Rechnungsstellung fällig. Die Prüfung im `OnValidate` bestätigt, dass keine unrealisierten MwSt-Einrichtungen existieren.
 
-**Beispiel 3 — Aktivierung blockiert:**
-> Es existiert ein `VAT Posting Setup` mit `Unrealized VAT Type = Percentage` für `VAT Bus. Posting Group = INLAND` und `VAT Prod. Posting Group = NORMAL`
-> → Wenn jetzt `Unrealized VAT = False` gesetzt wird, erscheint Fehlermeldung _„VAT Posting Setup INLAND NORMAL have Unrealized VAT Type to Percentage.“_
-> → Lösung: Erst VAT Posting Setup bereinigen, dann Unrealized VAT deaktivieren.
-
----
-
-### Feld 103: `Bill-to/Sell-to VAT Calc.` (Enum "G/L Setup VAT Calculation")
-Specifies whether VAT calculation is based on bill-to/sell-to or ship-to address.
-
-**Beispiel 1 — Standard: Rechnungsadresse:**
-> `Bill-to/Sell-to VAT Calc. = Bill-to/Sell-to`
-> → Die MwSt wird anhand des Landes der Rechnungsadresse ermittelt. Ein Kunde in Deutschland mit Lieferadresse Österreich bekommt deutsche MwSt.
-
-**Beispiel 2 — Lieferadresse:**
-> `Bill-to/Sell-to VAT Calc. = Ship-to`
-> → MwSt richtet sich nach dem Land der Lieferadresse. Wichtig für EU-Versand: Lieferung nach Frankreich → französische MwSt-Regeln.
-
-**Beispiel 3 — Cross-Border-Szenario:**
-> Ein Schweizer Kunde (Bill-to: CH) lässt nach Deutschland liefern (Ship-to: DE).
-> `Bill-to/Sell-to VAT Calc. = Bill-to/Sell-to` → CH-MwSt (keine EU-MwSt)
-> `Bill-to/Sell-to VAT Calc. = Ship-to` → DE-MwSt (innergemeinschaftliche Lieferung)
-> → Falsche Einstellung kann zu massiven MwSt-Fehlern im Reporting führen.
+**Beispiel 3 — Deaktivierung scheitert an bestehenden Einrichtungen:**
+> Das Unternehmen möchte `Unrealized VAT` deaktivieren, aber es existiert noch ein `VAT Posting Setup`-Eintrag für `VAT Bus. Posting Group = INLAND` / `VAT Prod. Posting Group = NORMAL` mit `Unrealized VAT Type = Percentage`.
+> ➜ Versuch: `Unrealized VAT = Nein`
+> **Ergebnis:** Fehler _„VAT Posting Setup INLAND NORMAL have Unrealized VAT Type to Percentage."_ — Die Deaktivierung wird blockiert. Lösung: Erst den VAT Posting Setup-Eintrag bereinigen, dann `Unrealized VAT` deaktivieren.
 
 ---
 
-### Feld 188: `Control VAT Period` (Enum "VAT Period Control")
-Controls VAT period validation and posting restrictions.
+### Feld 103: `Bill-to/Sell-to VAT Calc.` — MwSt nach Rechnungs- oder Lieferadresse
 
-**Beispiel 1 — Keine Kontrolle:**
-> `Control VAT Period = Disabled`
-> → Keine Validierung. Buchungen sind unabhängig vom MwSt-Zeitraum möglich.
+Legt fest, ob die MwSt anhand der Rechnungsadresse oder der Lieferadresse ermittelt wird.
 
-**Beispiel 2 — Warnung:**
-> `Control VAT Period = Warning`
-> → Bei Buchung außerhalb des offenen MwSt-Zeitraums erscheint eine Warnung, aber die Buchung ist trotzdem möglich. Ideal für Übergangsphasen.
+**Beispiel 1 — Standard: MwSt nach Rechnungsadresse:**
+> Ein deutsches Unternehmen verkauft an einen Kunden mit Rechnungsadresse in Deutschland. Die Ware wird an die deutsche Niederlassung geliefert — klarer Fall.
+> ➜ `Bill-to/Sell-to VAT Calc. = Rechnungsadresse`
+> **Ergebnis:** Deutsche MwSt (19%). Sauber und einfach.
 
-**Beispiel 3 — Fehler (hart):**
-> `Control VAT Period = Error`
-> → Buchung außerhalb des offenen MwSt-Zeitraums wird mit Fehler abgelehnt. Verhindert versehentliche Buchungen in bereits gemeldete MwSt-Perioden. Nutzt `FeatureTelemetry.LogUsage()` beim Wechsel der Einstellung.
+**Beispiel 2 — Ein Unternehmen liefert EU-weit:**
+> Das Unternehmen verkauft an einen französischen Kunden (Rechnungsadresse Paris). Die Ware geht an das Warenlager in Lyon. Der Steuerberater rät, die MwSt nach Lieferadresse zu berechnen (innergemeinschaftliche Lieferung).
+> ➜ `Bill-to/Sell-to VAT Calc. = Lieferadresse`
+> **Ergebnis:** Französische MwSt-Regeln kommen zur Anwendung, das System prüft die französische USt-ID.
+
+**Beispiel 3 — Cross-Border mit Schweiz:**
+> Ein Schweizer Kunde (Rechnungsadresse Zürich) lässt an eine deutsche Tochtergesellschaft liefern (Lieferadresse München). Der Steuerberater muss entscheiden, welche Regel gilt.
+> ➜ `Bill-to/Sell-to VAT Calc. = Rechnungsadresse` → Schweizer MwSt (keine EU-MwSt, Ausfuhr)
+> ➜ `Bill-to/Sell-to VAT Calc. = Lieferadresse` → Deutsche MwSt (innergemeinschaftliche Lieferung)
+> **Ergebnis:** Falsche Einstellung führt zu massiven MwSt-Fehlern in der UStVA! In diesem Fall muss der Steuerberater die korrekte Behandlung vorgeben.
 
 ---
 
-### Feld 72: `VAT Exchange Rate Adjustment` (Enum "Exch. Rate Adjustment Type")
-Method for adjusting VAT amounts during currency exchange rate adjustments.
+### Feld 188: `Control VAT Period` — MwSt-Zeitraum prüfen
 
-**Beispiel 1 — Keine Anpassung:**
-> `VAT Exchange Rate Adjustment = No Adjustment`
-> → Wechselkursdifferenzen werden nur für das Sachkonto berechnet, nicht für MwSt. MwSt bleibt unverändert.
+Steuert die Validierung der MwSt-Zeiträume bei Buchungen.
 
-**Beispiel 2 — Anpassung pro Eintrag:**
-> `VAT Exchange Rate Adjustment = Per Entry`
-> → Jeder MwSt-Posten wird einzeln mit dem neuen Wechselkurs bewertet. Detailliert, aber rechenintensiv.
+**Beispiel 1 — Das Unternehmen möchte flexibel bleiben:**
+> Die Buchhaltung erfasst manchmal Rechnungen verspätet und möchte keine starren Sperren. Der MwSt-Zeitraum wird im Nachhinein über die MwSt-Meldung korrigiert.
+> ➜ `Control VAT Period = Deaktiviert`
+> **Ergebnis:** Keine Validierung. Buchungen sind unabhängig vom MwSt-Zeitraum möglich.
 
-**Beispiel 3 — Zusammenfassende Anpassung:**
-> Die MwSt-Differenzen werden gesammelt auf ein separates Konto gebucht. Verwendet `VAT Posting Setup` für die Kontenfindung.
+**Beispiel 2 — Sanfte Warnung statt harter Blockade:**
+> Das Unternehmen hat die Juli-MwSt-Meldung bereits abgegeben, aber es kommen noch vereinzelt Juli-Rechnungen rein. Die Buchhaltung möchte gewarnt werden, aber nicht blockiert.
+> ➜ `Control VAT Period = Warnung`
+> **Ergebnis:** Bei Buchung außerhalb des offenen MwSt-Zeitraums erscheint ein Warnhinweis. Die Buchung ist dennoch möglich. Ideal für Übergangsphasen.
+
+**Beispiel 3 — Harte Sperre nach MwSt-Meldung:**
+> Das Unternehmen wurde bei der letzten Betriebsprüfung gerügt, weil Buchungen in bereits gemeldete MwSt-Zeiträume vorgenommen wurden. Der Finanzleiter verfügt: Nach Abgabe der UStVA sind keine Buchungen mehr im gemeldeten Zeitraum erlaubt.
+> ➜ `Control VAT Period = Fehler`
+> **Ergebnis:** Jede Buchung außerhalb des offenen MwSt-Zeitraums wird mit einem Fehler abgelehnt. Der Wechsel dieser Einstellung wird über `FeatureTelemetry.LogUsage()` protokolliert.
+
+---
+
+### Feld 72: `VAT Exchange Rate Adjustment` — MwSt-Kursanpassung
+
+Legt fest, wie MwSt-Beträge bei Wechselkursanpassungen behandelt werden.
+
+**Beispiel 1 — Das Unternehmen bucht nur in Landeswährung:**
+> Ein rein national tätiges Unternehmen hat keine Fremdwährungsbuchungen und benötigt keine MwSt-Kursanpassung.
+> ➜ `VAT Exchange Rate Adjustment = Keine Anpassung`
+> **Ergebnis:** Wechselkursdifferenzen werden nur für Sachkonten berechnet, MwSt bleibt unverändert.
+
+**Beispiel 2 — Ein Importeur mit vielen Fremdwährungsrechnungen:**
+> Das Unternehmen importiert Waren aus den USA und der Schweiz. Jede einzelne MwSt-Position soll mit dem aktuellen Kurs neu bewertet werden, um exakte MwSt-Differenzen auszuweisen.
+> ➜ `VAT Exchange Rate Adjustment = Pro Eintrag`
+> **Ergebnis:** Jeder MwSt-Posten wird einzeln mit dem neuen Wechselkurs bewertet. Detailliert, aber rechenintensiv.
+
+**Beispiel 3 — Sammelbuchung der MwSt-Differenzen:**
+> Das Unternehmen möchte MwSt-Differenzen nicht pro Eintrag, sondern gesammelt auf einem separaten MwSt-Differenzkonto buchen. Übersichtlicher für die UStVA.
+> ➜ Verwendung des `VAT Posting Setup` für die Kontenfindung der Sammelbuchung.
 
 ---
 
 ## 4.4 Zahlungstoleranzen & Skonto
 
-### Feld 94/95: `Payment Tolerance %` / `Max. Payment Tolerance Amount` (Decimal)
-Payment tolerance allowed for customer and vendor payment applications (Editable = false).
+### Felder 94/95: `Payment Tolerance %` / `Max. Payment Tolerance Amount` — Zahlungstoleranz
 
-> ⚠️ Diese Felder sind **nicht editierbar** (`Editable = false`). Sie werden vom System über die **Codeunit "Payment Tolerance"** berechnet.
+Maximale prozentuale und absolute Toleranz für den automatischen Zahlungsausgleich.
 
-**Beispiel 1 — Toleranz aktiv:**
-> `Payment Tolerance % = 2`, `Max. Payment Tolerance Amount = 50,00`
-> → Ein Kunde zahlt 980,00 € auf eine Rechnung über 1.000,00 €. Differenz = 20,00 € = 2%. Da unter 2% UND unter 50,00 € → automatischer Ausgleich möglich.
+> ⚠️ Diese Felder sind **nicht editierbar** (`Editable = false`). Sie werden vom System berechnet.
 
-**Beispiel 2 — Nur Max-Betrag erreicht:**
-> `Payment Tolerance % = 1`, `Max. Payment Tolerance Amount = 100,00` — Rechnung 10.000 €, Zahlung 9.850 € = 150 € Differenz = 1,5%. Prozentsatz überschritten, aber Betrag unter 100 €? Nein, 150 > 100 → Kein automatischer Ausgleich.
+**Beispiel 1 — Kunde zahlt etwas zu wenig, Differenz soll automatisch ausgeglichen werden:**
+> Ein Kunde überweist 980,00 € auf eine Rechnung über 1.000,00 € (Differenz 2%). Das Unternehmen möchte solche kleinen Differenzen automatisch ausgleichen lassen.
+> ➜ `Payment Tolerance % = 2`, `Max. Payment Tolerance Amount = 50,00`
+> **Ergebnis:** Die Differenz von 20 € liegt unter 2% und unter 50 € — automatischer Ausgleich. Der Kunde bekommt keinen Mahnbrief über 20 €, die Buchhaltung spart manuellen Aufwand.
 
-**Beispiel 3 — Toleranz deaktiviert:**
-> `Payment Tolerance % = 0`, `Max. Payment Tolerance Amount = 0`
-> → Jede Differenz führt zu offenem Posten. `GetPmtToleranceVisible()` returniert `false` → Toleranz-Felder auf der Page unsichtbar.
+**Beispiel 2 — Hoher Rechnungsbetrag, kleine Toleranz:**
+> Ein Kunde zahlt 98.500 € auf eine Rechnung über 100.000 € (Differenz 1.500 € = 1,5%). Die Buchhaltung hat enge Toleranzen gesetzt.
+> ➜ `Payment Tolerance % = 1`, `Max. Payment Tolerance Amount = 500,00`
+> **Ergebnis:** Prozent überschritten (1,5 > 1,0) UND Betrag überschritten (1.500 > 500) — KEIN automatischer Ausgleich. Der Kunde muss die restlichen 1.500 € zahlen.
+
+**Beispiel 3 — Keine Toleranz — jede Differenz bleibt offen:**
+> Ein kleines Unternehmen mit geringem Zahlungsverkehr möchte jede Differenz manuell prüfen und klären. Automatischer Ausgleich ist unerwünscht.
+> ➜ `Payment Tolerance % = 0`, `Max. Payment Tolerance Amount = 0`
+> **Ergebnis:** `GetPmtToleranceVisible()` liefert `false` — die Toleranzfelder sind ausgeblendet. Jede Differenz bleibt als offener Posten stehen.
 
 ---
 
-### Feld 99/92: `Payment Tolerance Posting` / `Pmt. Disc. Tolerance Posting` (Option)
-Specifies how tolerance amounts are posted.
+### Feld 99/92: `Payment Tolerance Posting` / `Pmt. Disc. Tolerance Posting` — Toleranz-Buchungsart
+
+Legt fest, auf welche Konten Toleranzbeträge gebucht werden.
 
 ```al
 OptionMembers = "Payment Tolerance Accounts","Payment Discount Accounts";
 ```
 
-**Beispiel 1 — Auf Toleranz-Konten:**
-> `Payment Tolerance Posting = Payment Tolerance Accounts`
-> → Die 20 € Differenz aus obigem Beispiel werden auf das Konto aus `Gen. Posting Setup → Payment Tolerance Account` gebucht. Saubere Trennung vom Skonto.
+**Beispiel 1 — Toleranz sauber vom Skonto trennen:**
+> Das Unternehmen möchte Toleranzbeträge strikt von Skontobeträgen trennen, damit die UStVA keine falschen Skontowerte zeigt.
+> ➜ `Payment Tolerance Posting = Zahlungstoleranz-Konten`
+> **Ergebnis:** Die 20 € Differenz werden auf das `Payment Tolerance Account` aus dem `Gen. Posting Setup` gebucht. Das Skontokonto bleibt unberührt — saubere Trennung für die UStVA.
 
-**Beispiel 2 — Auf Skonto-Konten:**
-> `Payment Tolerance Posting = Payment Discount Accounts`
-> → Die Toleranz wird wie Skonto behandelt und auf das Skonto-Konto gebucht. Wird in der MwSt-Berechnung wie Skonto berücksichtigt. Kann MwSt-Differenzen erzeugen.
+**Beispiel 2 — Toleranz wie Skonto behandeln:**
+> Das Unternehmen betrachtet kleine Differenzen als „nachträgliches Skonto" und möchte sie entsprechend buchen.
+> ➜ `Payment Tolerance Posting = Skonto-Konten`
+> **Ergebnis:** Die 20 € werden auf das Skontokonto gebucht. Die MwSt wird entsprechend korrigiert. Kann zu MwSt-Rundungsdifferenzen führen.
 
-**Beispiel 3 — Kombination mit `Pmt. Disc. Tolerance Warning` (Feld 100):**
-> `Pmt. Disc. Tolerance Warning = True` + Toleranz überschritten
-> → Warnung erscheint, aber Buchung möglich. Ohne Warning = stillschweigende Buchung.
+**Beispiel 3 — Warnung bei Toleranzüberschreitung:**
+> Das Unternehmen hat `Pmt. Disc. Tolerance Warning = Ja` gesetzt und die Toleranz wird überschritten.
+> ➜ Eine Warnung erscheint, aber die Buchung ist dennoch möglich. Mit `Pmt. Disc. Tolerance Warning = Nein` würde die Überschreitung stillschweigend gebucht werden.
 
 ---
 
-### Feld 28: `Pmt. Disc. Excl. VAT` (Boolean)
-Calculates payment discounts excluding VAT amounts.
+### Feld 28: `Pmt. Disc. Excl. VAT` — Skonto ohne MwSt
+
+Legt fest, ob Skonto nur vom Nettobetrag berechnet wird.
 
 ```al
 trigger OnValidate()
@@ -330,59 +370,68 @@ begin
 end;
 ```
 
-**Beispiel 1 — Skonto auf Netto:**
-> `Pmt. Disc. Excl. VAT = True`
-> → Rechnung 1.190 € brutto (1.000 € netto + 190 € MwSt). 2% Skonto = 20 € (nur vom Netto!). MwSt-Korrektur separat. Realistisches Szenario für B2B. **Bedingung:** `Adjust for Payment Disc. = False`.
+**Beispiel 1 — B2B: Skonto nur auf den Nettobetrag:**
+> Das Unternehmen verkauft eine Maschine für 11.900 € brutto (10.000 € netto + 1.900 € MwSt) mit 2% Skonto. Der Kunde erwartet Skonto nur auf den Nettopreis — branchenüblich im B2B.
+> ➜ `Pmt. Disc. Excl. VAT = Ja`
+> **Ergebnis:** 2% Skonto = 200 € (vom Netto). Die MwSt wird separat korrigiert. Voraussetzung: `Adjust for Payment Disc. = Nein`.
 
-**Beispiel 2 — Skonto auf Brutto:**
-> `Pmt. Disc. Excl. VAT = False`
-> → Rechnung 1.190 € brutto, 2% Skonto = 23,80 €. MwSt wird implizit mit-skontiert. **Bedingung:** `VAT Tolerance % = 0`.
+**Beispiel 2 — B2C: Skonto auf den Bruttobetrag:**
+> Ein Online-Händler verkauft an Endverbraucher. Skonto wird immer auf den Gesamtbetrag gewährt — so steht es in den AGB.
+> ➜ `Pmt. Disc. Excl. VAT = Nein`
+> **Ergebnis:** 2% Skonto auf 11.900 € = 238 €. Die MwSt wird implizit mit-skontiert. Voraussetzung: `VAT Tolerance % = 0`.
 
-**Beispiel 3 — Fehler bei Konflikt:**
-> `Pmt. Disc. Excl. VAT = True` UND `Adjust for Payment Disc. = True`
-> → Fehler beim Validieren! Diese Kombination schließen sich gegenseitig aus. `TestField` prüft auf `false`.
+**Beispiel 3 — Fehlerhafte Kombinationen:**
+> Der Buchhalter versucht, `Pmt. Disc. Excl. VAT = Ja` und gleichzeitig `Adjust for Payment Disc. = Ja` zu setzen.
+> **Ergebnis:** Die `OnValidate`-Prüfung schlägt fehl: `TestField("Adjust for Payment Disc.", false)` erzwingt einen Fehler. Diese Kombinationen schließen sich gegenseitig aus. Das System verhindert die widersprüchliche Konfiguration.
 
 ---
 
-### Feld 49: `Adjust for Payment Disc.` (Boolean)
-Automatically adjusts VAT when payment discounts are applied.
+### Feld 49: `Adjust for Payment Disc.` — MwSt bei Skonto anpassen
+
+Automatische MwSt-Korrektur bei Skontoabzug.
 
 ```al
 InitValue = true;   // Standard: aktiviert
 ```
 
-**Beispiel 1 — Automatische Anpassung:**
-> `Adjust for Payment Disc. = True`
-> → Bei Skontoabzug wird die MwSt automatisch korrigiert. Rechnung 1.190 €, Skonto 2% = 23,80 € → MwSt wird anteilig korrigiert (Debitorenkonto 23,80, MwSt-Konto ~3,80). **Bedingung:** `Pmt. Disc. Excl. VAT = False`, `VAT Tolerance % = 0`.
+**Beispiel 1 — Automatische MwSt-Korrektur gewünscht (Standard):**
+> Das Unternehmen gewährt 2% Skonto und möchte, dass die MwSt automatisch anteilig korrigiert wird. Der Buchhalter muss sich um nichts kümmern.
+> ➜ `Adjust for Payment Disc. = Ja`
+> **Ergebnis:** Bei Skontoabzug (23,80 € auf 1.190 € brutto) wird die MwSt automatisch korrigiert: Debitorenkonto 23,80, MwSt-Konto ~3,80. Voraussetzung: `Pmt. Disc. Excl. VAT = Nein`, `VAT Tolerance % = 0`.
 
-**Beispiel 2 — Keine automatische Anpassung:**
-> `Adjust for Payment Disc. = False`
-> → MwSt bleibt unverändert. Skonto wird nur vom Brutto abgezogen, MwSt-Differenz bleibt als offene MwSt stehen (später manuelle Korrektur nötig).
+**Beispiel 2 — Manuelle MwSt-Korrektur (nicht empfohlen):**
+> Das Unternehmen möchte die MwSt-Korrektur manuell vornehmen, z.B. weil komplexe MwSt-Schlüssel im Spiel sind.
+> ➜ `Adjust for Payment Disc. = Nein`
+> **Ergebnis:** MwSt bleibt unverändert. Skonto wird vom Brutto abgezogen, die MwSt-Differenz bleibt als offen stehen. Der Buchhalter muss am Periodenende manuell korrigieren — zeitaufwändig und fehleranfällig.
 
-**Beispiel 3 — Blockiert durch VAT Posting Setup:**
-> `Adjust for Payment Disc. = False` während ein `VAT Posting Setup`-Eintrag `Adjust for Payment Discount = True` hat.
-> → Error: _"VAT Posting Setup [Name] use Adjust for Payment Discount."_ Erst VAT Posting Setup deaktivieren, dann `Adjust for Payment Disc.` ändern.
+**Beispiel 3 — Deaktivierung durch bestehende VAT Posting Setup-Einträge blockiert:**
+> Das Unternehmen hat in der Vergangenheit `VAT Posting Setup`-Einträge mit `Adjust for Payment Discount = Ja` eingerichtet. Der Buchhalter versucht nun, `Adjust for Payment Disc.` auf `Nein` zu setzen.
+> **Ergebnis:** Fehler: _„VAT Posting Setup [Name] use Adjust for Payment Discount."_ — Erst alle VAT Posting Setup-Einträge deaktivieren, dann die globale Einstellung ändern.
 
 ---
 
 ## 4.5 Rundung & Nachkommastellen
 
-### Feld 58/59: `Inv. Rounding Precision (LCY)` / `Inv. Rounding Type (LCY)` (Decimal/Option)
-Precision and method for invoice rounding in local currency.
+### Felder 58/59: `Inv. Rounding Precision (LCY)` / `Inv. Rounding Type (LCY)` — Rechnungsrundung
 
-**Beispiel 1 — Kaufmännisches Runden (Nearest):**
-> `Inv. Rounding Precision (LCY) = 0.01`, `Inv. Rounding Type (LCY) = Nearest`
-> → Standard. Rechnungssumme 123,455 → 123,46. Nichts Besonderes.
+Genauigkeit und Verfahren für die Rechnungsrundung in Landeswährung.
 
-**Beispiel 2 — Schweizer 5-Rappen-Rundung:**
-> `Inv. Rounding Precision (LCY) = 0.05`, `Inv. Rounding Type (LCY) = Up`
-> → Rechnungssumme 123,42 → 123,45. Immer AUF die nächsten 5 Rappen. Typisch für CH-Franken.
+**Beispiel 1 — Standard: kaufmännisches Runden auf Cent:**
+> Ein deutsches Unternehmen erwartet ganz normale Cent-Rundung. Aus 123,455 wird 123,46.
+> ➜ `Inv. Rounding Precision (LCY) = 0.01`, `Inv. Rounding Type (LCY) = Nearest`
+> **Ergebnis:** Keine Überraschungen — alle Rechnungsbeträge auf 2 Nachkommastellen.
 
-**Beispiel 3 — Betrag ändern trotz Buchungen:**
-> `Amount Rounding Precision` ändern, aber es existieren bereits G/L Entry-Datensätze
-> → `CheckRoundingError()` prüft ALLE Ledger-Entry-Tabellen (G/L, Item, Job, Resource, FA, Maintenance, Insurance). Wenn einer nicht leer ist → Error: _"You cannot change the contents of the Amount Rounding Precision field because there are posted ledger entries."_
+**Beispiel 2 — Schweizer Unternehmen mit 5-Rappen-Rundung:**
+> Ein Unternehmen in der Schweiz stellt Rechnungen in CHF. Die kleinste Münze ist 5 Rappen, daher muss immer auf 5 Rappen aufgerundet werden.
+> ➜ `Inv. Rounding Precision (LCY) = 0.05`, `Inv. Rounding Type (LCY) = Aufrunden`
+> **Ergebnis:** Rechnungssumme 123,42 wird zu 123,45. Auch 123,41 würde auf 123,45 aufgerundet. Typisch für CHF.
 
-**Relevanter Code:**
+**Beispiel 3 — Rundung ändern, aber es existieren bereits Buchungen:**
+> Das Unternehmen hat bereits 2 Jahre mit `Amount Rounding Precision = 0.01` gebucht und möchte nun auf `0.001` wechseln.
+> ➜ Versuch, `Amount Rounding Precision` zu ändern
+> **Ergebnis:** `CheckRoundingError()` prüft ALLE Ledger-Entry-Tabellen (G/L, Item, Job, Resource, FA, Maintenance, Insurance). Da G/L Entry nicht leer ist → Fehler: _„Sie können den Inhalt des Feldes Amount Rounding Precision nicht ändern, weil es bereits gebuchte Posten gibt."_ Die Rundungsgenauigkeit kann NUR VOR der ersten Buchung gesetzt werden.
+
+**Relevante Prozedur:**
 ```al
 procedure CheckRoundingError(NameOfField: Text[100])
 begin
@@ -390,34 +439,39 @@ begin
     if GLEntry.FindFirst() then ErrorMessage := true;
     if ItemLedgerEntry.FindFirst() then ErrorMessage := true;
     // ... alle weiteren Ledger-Entry-Tabellen
-    OnBeforeCheckRoundingError(ErrorMessage);   // Integration Event
+    OnBeforeCheckRoundingError(ErrorMessage);   // Integrationsereignis
     if ErrorMessage then Error(Text018, NameOfField);
 end;
 ```
 
 ---
 
-### Feld 73: `Amount Rounding Precision` (Decimal)
-Precision for monetary amounts (InitValue = 0.01).
+### Feld 73: `Amount Rounding Precision` — Betragsrundung
 
-**Beispiel 1 — Standard:**
-> `Amount Rounding Precision = 0.01`
-> → Alle Beträge auf 2 Nachkommastellen. Rechnungsposition 10,00 € × 1,19 = 11,90 € passt.
+Rundungsgenauigkeit für Geldbeträge (Initialwert = 0.01).
 
-**Beispiel 2 — Keine Nachkommastellen (JPY, KRW):**
-> `Amount Rounding Precision = 1`
-> → Beträge werden auf ganze Einheiten gerundet. 1190 Yen, keine Dezimalstellen. Nach Änderung: _"You must close the program and start again..."_
+**Beispiel 1 — Europäischer Standard mit 2 Nachkommastellen:**
+> Eine GmbH in Österreich mit EUR als Landeswährung. Ein Positionspreis von 10,00 € × 1,19 = 11,90 € — passt perfekt.
+> ➜ `Amount Rounding Precision = 0.01`
+> **Ergebnis:** Alle Beträge auf 2 Nachkommastellen. Die `Amount Decimal Places`-Einstellung (Standard "2:2") sorgt für korrekte Anzeige.
 
-**Beispiel 3 — 3 Dezimalstellen:**
-> `Amount Rounding Precision = 0.001`
-> → Für Öl-/Gasindustrie mit Preis je 1000 Liter. 1,199 € pro Liter × 1000. Änderung erfordert Client-Neustart (Message `Text021`).
+**Beispiel 2 — Japanischer Yen ohne Dezimalstellen:**
+> Ein japanisches Unternehmen in Tokyo bucht in JPY. Es gibt keine Yen-Cent — alle Beträge sind ganzzahlig.
+> ➜ `Amount Rounding Precision = 1`
+> **Ergebnis:** Nach dem Speichern erscheint die Meldung: _„Sie müssen das Programm schließen und neu starten, um die Betragsrundung zu aktivieren."_ Erst nach Client-Neustart gilt die neue Rundung.
+
+**Beispiel 3 — Ölindustrie mit 3 Dezimalstellen:**
+> Ein Mineralölhändler verkauft Treibstoff zu 1,199 € pro Liter. Die Abrechnung über mehrere tausend Liter erfordert 3 Dezimalstellen, um Rundungsdifferenzen zu vermeiden.
+> ➜ `Amount Rounding Precision = 0.001`
+> **Ergebnis:** 10.000 Liter × 1,199 € = 11.990,000 € statt 11.990,00 € — die dritte Nachkommastelle verhindert summierte Rundungsfehler über das Jahr.
 
 ---
 
-## 4.6 Zusätzliche Berichtswährung (Additional Reporting Currency)
+## 4.6 Zusätzliche Berichtswährung
 
-### Feld 68: `Additional Reporting Currency` (Code[10])
-Currency code for parallel accounting.
+### Feld 68: `Additional Reporting Currency` — Zusätzliche Berichtswährung
+
+Währungscode für parallele Buchführung.
 
 ```al
 trigger OnValidate()
@@ -426,33 +480,36 @@ begin
        ("Additional Reporting Currency" <> '')
     then begin
         AdjAddReportingCurr.SetAddCurr("Additional Reporting Currency");
-        AdjAddReportingCurr.RunModal();   // Report "Adjust Add. Reporting Currency"
+        AdjAddReportingCurr.RunModal();   // Bericht "Adjust Add. Reporting Currency"
         if not AdjAddReportingCurr.IsExecuted() then
             "Additional Reporting Currency" := xRec."Additional Reporting Currency";
     end;
-    if (...executed...) then
+    if (...ausgeführt...) then
         DeleteAnalysisView();  // Löscht alle Analyseansichten!
 end;
 ```
 
-**Beispiel 1 — Konzernwährung USD:**
-> LCY = EUR, `Additional Reporting Currency = USD`
-> → Jede Buchung wird parallel in USD gespeichert. Report "Adjust Add. Reporting Currency" initialisiert Wechselkurse. Alle Analyseansichten werden via `DeleteAnalysisView()` gelöscht und müssen neu aufgebaut werden.
+**Beispiel 1 — Deutsche Tochter einer US-Muttergesellschaft:**
+> Die Muttergesellschaft in New York verlangt Berichte in USD. Das Unternehmen bucht in EUR (LCY), möchte aber parallel alle Buchungen in USD sehen.
+> ➜ `Additional Reporting Currency = USD`
+> **Ergebnis:** Der Bericht "Zusätzliche Berichtswährung anpassen" öffnet sich zur Wechselkurseingabe. Jede Buchung wird parallel in USD gespeichert. **Achtung:** Alle vorhandenen Analyseansichten werden über `DeleteAnalysisView()` gelöscht und müssen neu aufgebaut werden.
 
-**Beispiel 2 — Keine Zusatzwährung:**
-> `Additional Reporting Currency = ''` (leer)
-> → Nur in LCY buchen. Keine parallele Währung. Analyseansichten bleiben erhalten.
+**Beispiel 2 — Nur Landeswährung (Standard):**
+> Ein rein national tätiges Unternehmen ohne Auslandsbezug benötigt keine Parallelwährung.
+> ➜ `Additional Reporting Currency = ''` (leer)
+> **Ergebnis:** Nur in EUR buchen. Keine Parallelwährung. Analyseansichten bleiben erhalten.
 
-**Beispiel 3 — Währungsumstellung:**
-> `Additional Reporting Currency` von USD auf CHF ändern
-> → `AdjAddReportingCurr.RunModal()` öffnet den Wechselkurs-Anpassungs-Dialog. Wenn der Benutzer abbricht (`IsExecuted() = false`), wird auf die alte Währung zurückgesetzt. Wenn ausgeführt, werden Analyseansichten gelöscht (`DeleteAnalysisView()`).
+**Beispiel 3 — Währungsumstellung von USD auf CHF:**
+> Die Muttergesellschaft wechselt den Konzernstandard von USD auf CHF. Der Bericht "Zusätzliche Berichtswährung anpassen" öffnet sich. Der Buchhalter stellt die Kurse ein.
+> ➜ Wenn der Benutzer den Dialog abbricht (`IsExecuted() = false`), wird der alte Wert beibehalten. Wenn er abschließt, werden die Analyseansichten gelöscht und mit den neuen CHF-Kursen neu aufgebaut.
 
 ---
 
-## 4.7 Job Queue & Hintergrundbuchung
+## 4.7 Auftragswarteschlange & Hintergrundbuchung
 
-### Feld 50: `Post with Job Queue` (Boolean)
-Enables background posting using job queue.
+### Feld 50: `Post with Job Queue` — Buchen über Auftragswarteschlange
+
+Ermöglicht das Buchen im Hintergrund über die Auftragswarteschlange.
 
 ```al
 trigger OnValidate()
@@ -462,105 +519,119 @@ begin
 end;
 ```
 
-**Beispiel 1 — Vordergrund-Buchung:**
-> `Post with Job Queue = False`
-> → Buchung erfolgt sofort, der Benutzer wartet auf Abschluss. GUI blockiert während der Buchung.
+**Beispiel 1 — Ein Buchhalter bucht einzelne Rechnungen direkt:**
+> Die Finanzabteilung bucht täglich 20–30 Eingangsrechnungen. Der Buchhalter möchte sofort sehen, ob die Buchung erfolgreich war.
+> ➜ `Post with Job Queue = Nein`
+> **Ergebnis:** Jede Buchung wird sofort ausgeführt, die GUI zeigt Fortschritt und Ergebnis an. Der Buchhalter wartet kurz auf den Abschluss.
 
-**Beispiel 2 — Hintergrund-Buchung:**
-> `Post with Job Queue = True`, `Job Queue Category Code = "POSTING"`, `Job Queue Priority for Post = 1000`
-> → Buchung wird als Job-Queue-Task eingereiht. Der Benutzer kann sofort weiterarbeiten. `Notify On Success = True` zeigt eine Benachrichtigung bei Abschluss.
+**Beispiel 2 — Monatsabschluss mit 5.000 Buchungen im Batch:**
+> Zum Monatsende müssen 5.000 automatische Abschlussbuchungen (Abgrenzungen, Rückstellungen, Abschreibungen) verarbeitet werden. Die Buchhaltung startet den Batch und möchte weiterarbeiten können.
+> ➜ `Post with Job Queue = Ja`, `Job Queue Category Code = "MONATSABSCHLUSS"`, `Job Queue Priority for Post = 1000`, `Notify On Success = Ja`
+> **Ergebnis:** Die 5.000 Buchungen werden in der Auftragswarteschlange eingereiht. Der Buchhalter kann sofort andere Aufgaben erledigen. Bei Abschluss erscheint eine Benachrichtigung.
 
-**Beispiel 3 — Post & Print:**
-> `Post & Print with Job Queue = True` (erzwingt `Post with Job Queue = True`)
-> → Nach erfolgreicher Hintergrund-Buchung wird automatisch der Beleg gedruckt/als PDF erzeugt. `Job Q. Prio. for Post & Print = 1000`.
+**Beispiel 3 — Buchen und Drucken im Hintergrund:**
+> Das Unternehmen verschickt täglich 200 Ausgangsrechnungen per E-Mail. Nach der Buchung soll automatisch das PDF erzeugt und versendet werden — alles ohne Benutzerinteraktion.
+> ➜ `Post & Print with Job Queue = Ja` (erzwingt `Post with Job Queue = Ja`), `Job Q. Prio. for Post & Print = 1000`
+> **Ergebnis:** Buchung + PDF-Erzeugung + E-Mail-Versand in einem automatisierten Durchlauf. Der Sachbearbeiter startet den Stapel und widmet sich anderen Aufgaben.
 
-**Relevanter Code:**
-- `JobQueueActive(): Boolean` — prüft, ob Job Queue aktiv
-- **Codeunit "Job Queue"** — verwaltet die Einträge
+**Relevante Codestellen:**
+- `JobQueueActive(): Boolean` — prüft, ob Auftragswarteschlange aktiv ist
+- **Codeunit "Job Queue"** — verwaltet die Warteschlangeneinträge
 
 ---
 
 ## 4.8 Sonstige wichtige Felder
 
-### Feld 164: `Show Amounts` (Option)
-Controls amount display in G/L entries.
+### Feld 164: `Show Amounts` — Betragsanzeige
+
+Steuert, wie Beträge in Sachposten und Berichten angezeigt werden.
 
 ```al
 OptionMembers = "Amount Only","Debit/Credit Only","All Amounts";
 ```
 
-**Beispiel 1 — Nur Beträge:**
-> `Show Amounts = Amount Only`
-> → In G/L Entry-Seiten wird nur `Amount` angezeigt. Debit/Credit separat ausgeblendet. Ideal für einfache Buchhaltung.
+**Beispiel 1 — Der Buchhalter möchte nur die Nettobeträge sehen:**
+> Ein kleines Unternehmen mit einfacher Buchhaltung benötigt keine Soll/Haben-Trennung.
+> ➜ `Show Amounts = Nur Betrag`
+> **Ergebnis:** Auf der Sachposten-Seite wird nur `Amount` angezeigt. Soll/Haben separat ist ausgeblendet.
 
-**Beispiel 2 — Nur Soll/Haben:**
-> `Show Amounts = Debit/Credit Only`
-> → Zeigt `Debit Amount` und `Credit Amount`. Setzen viele Code-Stellen voraus, z.B. `AppliedVendorEntries.Page.al`:
+**Beispiel 2 — Der Steuerberater benötigt Soll/Haben-Ansicht:**
+> Der Steuerberater prüft die Buchhaltung und besteht auf der klassischen Soll/Haben-Darstellung. Viele Auswertungen setzen diese Ansicht voraus.
+> ➜ `Show Amounts = Nur Soll/Haben`
+> **Ergebnis:** Zeigt `Debit Amount` und `Credit Amount`. Zahlreiche Codestellen prüfen auf diese Einstellung, z.B. in `AppliedVendorEntries.Page.al`:
 > ```al
 > AmountVisible := not (GLSetup."Show Amounts" = GLSetup."Show Amounts"::"Debit/Credit Only");
 > ```
 
-**Beispiel 3 — Alle Spalten:**
-> `Show Amounts = All Amounts`
-> → Sowohl `Amount`, `Debit Amount` als auch `Credit Amount` sichtbar. Maximale Transparenz, mehr Platzbedarf.
+**Beispiel 3 — Maximale Transparenz für die Konzernberichterstattung:**
+> Die Konzernmutter verlangt vollständige Transparenz — Betrag, Soll und Haben in allen Berichten.
+> ➜ `Show Amounts = Alle Beträge`
+> **Ergebnis:** `Amount`, `Debit Amount` und `Credit Amount` sind sichtbar. Höherer Platzbedarf, aber maximale Nachvollziehbarkeit.
 
 ---
 
-### Feld 65: `Summarize G/L Entries` (Boolean)
-Combines G/L entries with identical account, posting date, and dimensions.
+### Feld 65: `Summarize G/L Entries` — Sachposten zusammenfassen
 
-**Beispiel 1 — Zusammenfassen:**
-> `Summarize G/L Entries = True`
-> → Mehrmals dasselbe Konto am gleichen Tag mit gleichen Dimensionen → nur EIN G/L Entry. Weniger Einträge, bessere Performance, aber weniger Detail.
+Fasst identische Sachposten (gleiches Konto, Datum, Dimensionen) zusammen.
 
-**Beispiel 2 — Detail:**
-> `Summarize G/L Entries = False`
-> → Jede Buchung = ein G/L Entry. Maximale Detailtiefe, mehr Speicherplatz.
+**Beispiel 1 — Ein Großhändler mit Massenbuchungen möchte Speicherplatz sparen:**
+> Das Unternehmen bucht täglich 1.000 Rechnungen an denselben Großkunden. Hunderte identische Sachposten würden die Datenbank aufblähen.
+> ➜ `Summarize G/L Entries = Ja`
+> **Ergebnis:** Alle Buchungen auf dasselbe Konto mit gleichem Datum und gleichen Dimensionen werden zu EINEM Sachposten zusammengefasst. Weniger Datensätze, schnellere Reports.
 
-**Beispiel 3 — Performance-kritisch:**
-> Bei Massenbuchungen (z.B. 10.000 Rechnungen an denselben Debitor) reduziert `Summarize = True` die G/L Entries massiv. Sichtbar in `GLEntryPostingPreview.Table.al` während der Vorschau.
+**Beispiel 2 — Der Wirtschaftsprüfer verlangt Einzelaufzeichnung:**
+> Bei der letzten Betriebsprüfung wurde die Zusammenfassung kritisiert. Der Prüfer verlangt jede Buchung als separaten Sachposten.
+> ➜ `Summarize G/L Entries = Nein`
+> **Ergebnis:** Jede Buchung = ein eigener Sachposten. Maximale Detailtiefe, mehr Speicherplatz, aber prüfungssicher.
 
----
-
-### Feld 56: `Mark Cr. Memos as Corrections` (Boolean)
-Marks credit memos as corrections for VAT and financial reporting.
-
-**Beispiel 1 — Korrektur-Markierung:**
-> `Mark Cr. Memos as Corrections = True`
-> → Gutschriften werden als Korrektur markiert (Feld `Correction` auf G/L Entry = True). Statistiken/MwSt-Meldungen werten diese separat aus.
-
-**Beispiel 2 — Keine Markierung:**
-> `Mark Cr. Memos as Corrections = False`
-> → Gutschriften wie normale Buchungen. Können in MwSt-Meldungen fälschlich als positiver Umsatz erscheinen.
-
-**Beispiel 3 — IDEP/MwSt-Meldung Deutschland:**
-> Korrektur-Gutschriften müssen in der UStVA-Zeile 56 separat ausgewiesen werden. Ohne `Mark Cr. Memos as Corrections` landen sie in der falschen Zeile.
+**Beispiel 3 — Performance bei Massenbuchungen:**
+> Bei 10.000 Rechnungen an denselben Debitor mit identischen Dimensionen reduziert `Summarize = Ja` die Sachposten von 10.000 auf ca. 30 (je nach Kontenanzahl). In der Vorschau (`GLEntryPostingPreview.Table.al`) bereits sichtbar.
 
 ---
 
-## 4.9 Integration Events (für Entwickler)
+### Feld 56: `Mark Cr. Memos as Corrections` — Gutschriften als Korrektur
 
-Table 98 stellt folgende `[IntegrationEvent]`-Prozeduren bereit:
+Markiert Gutschriften als Korrekturbuchungen für MwSt und Berichtswesen.
 
-| Event | Parameter | Verwendung |
+**Beispiel 1 — Deutsche UStVA verlangt Trennung von Korrekturen:**
+> Das Unternehmen muss in der Umsatzsteuer-Voranmeldung Korrekturgutschriften separat in Zeile 56 ausweisen. Das Finanzamt akzeptiert keine vermischten Werte.
+> ➜ `Mark Cr. Memos as Corrections = Ja`
+> **Ergebnis:** Gutschriften erhalten im Feld `Correction` auf dem Sachposten den Wert `True`. Die MwSt-Meldung wertet diese separat aus — korrekte UStVA.
+
+**Beispiel 2 — Gutschriften als normale Minus-Buchungen:**
+> Ein Unternehmen ohne besondere MwSt-Anforderungen behandelt Gutschriften wie normale Buchungen mit negativem Vorzeichen.
+> ➜ `Mark Cr. Memos as Corrections = Nein`
+> **Ergebnis:** Gutschriften erscheinen als negative Umsätze. In der MwSt-Meldung können sie fälschlich in der falschen Zeile landen — problematisch bei Betriebsprüfungen.
+
+**Beispiel 3 — Internationale Konzerne mit abweichenden Anforderungen:**
+> Die österreichische Tochter benötigt `Mark Cr. Memos as Corrections = Ja` für die UVA, die Schweizer Tochter nicht.
+> ➜ Pro Unternehmen separat einstellbar (Mandantenkonfiguration). Die Auswirkung ist direkt im Feld `Correction` der Sachposten sichtbar.
+
+---
+
+## 4.9 Integrationsereignisse (für Entwickler)
+
+Tabelle 98 stellt folgende `[IntegrationEvent]`-Prozeduren bereit:
+
+| Ereignis | Parameter | Verwendung |
 |---|---|---|
 | `OnBeforeCheckRoundingError` | `var ErrorMessage: Boolean` | Zusätzliche Prüfungen vor Rundungsänderung |
-| `OnAfterIsPostingAllowed` | `GLSetup, PostingDate, var Result` | Custom Posting-Date-Validierung |
-| `OnBeforeFirstAllowedPostingDate` | `GLSetup, var AllowedPostingDate, var IsHandled` | Eigenen Algorithmus für ersten Buchungstag |
-| `OnAfterUpdateDimValueGlobalDimNo` | `ShortcutDimNo, OldDimCode, NewDimCode` | Custom Logic bei Dim-Änderung |
+| `OnAfterIsPostingAllowed` | `GLSetup, PostingDate, var Result` | Eigene Buchungsdatum-Validierung |
+| `OnBeforeFirstAllowedPostingDate` | `GLSetup, var AllowedPostingDate, var IsHandled` | Eigener Algorithmus für erstes Buchungsdatum |
+| `OnAfterUpdateDimValueGlobalDimNo` | `ShortcutDimNo, OldDimCode, NewDimCode` | Eigene Logik bei Dimensionsänderung |
 
-**Subscriber-Beispiel (AL):**
+**Abonnenten-Beispiel (AL):**
 ```al
-codeunit 50100 "My Posting Validation"
+codeunit 50100 "Meine Buchungsprüfung"
 {
     [EventSubscriber(ObjectType::Table, Database::"General Ledger Setup",
         OnAfterIsPostingAllowed, '', false, false)]
-    local procedure CheckCustomPostingPeriod(
+    local procedure PrüfeBuchungsperiode(
         GeneralLedgerSetup: Record "General Ledger Setup";
         PostingDate: Date;
         var Result: Boolean)
     begin
-        if PostingDate < CustomGetFiscalYearStart() then
+        if PostingDate < MeineGeschäftsjahresAnfang() then
             Result := false;
     end;
 }
@@ -572,7 +643,7 @@ codeunit 50100 "My Posting Validation"
 
 | Tabelle/Codeunit | ID | Verwendung |
 |---|---|---|
-| **General Ledger Setup** | 98 | Singleton-Konfiguration |
+| **General Ledger Setup** | 98 | Singleton-Einrichtung |
 | **G/L Account** | 15 | Sachkonten |
 | **G/L Entry** | 17 | Gebuchte Sachposten |
 | **Gen. Journal Line** | 81 | Fibu-Buchungszeilen |
@@ -580,9 +651,9 @@ codeunit 50100 "My Posting Validation"
 | **Currency** | 4 | Währungen |
 | **Dimension** | 348 | Dimensionen |
 | **Dimension Value** | 349 | Dimensionswerte |
-| **User Setup Management** | Codeunit | Posting-Date-Checks, Date-Formula-Berechnung |
-| **Dimension Management** | Codeunit | DimensionSetID-Handling, Popup |
-| **Feature Telemetry** | Codeunit | Feature-Usage-Tracking |
+| **User Setup Management** | Codeunit | Buchungsdatum-Prüfungen, Datumsformel-Berechnung |
+| **Dimension Management** | Codeunit | Dimensionsset-Verwaltung, Popup |
+| **Feature Telemetry** | Codeunit | Nutzungsverfolgung |
 
 ---
 
