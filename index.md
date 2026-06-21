@@ -14,28 +14,81 @@ die Module, Namespaces, Tabellen, Pages und Codeunits, aus denen BC28 besteht.
 
 ## Aufbau dieser Dokumentation
 
-Die Dokumentation folgt der App-Struktur von BC28:
+Die Dokumentation folgt der App-Struktur von BC28. Ausgearbeitete Kapitel zeigen alle Unterthemen:
 
-| Kapitel | Inhalt |
-|---------|--------|
-| [1. Überblick & Architektur](01-overview/) | App-Modell, Abhängigkeiten, AL-Sprachfeatures |
-| [2. System Application](02-system-application/) | Plattform-Module (Azure AD, Encryption, Telemetry…) |
-| [3. Business Foundation](03-business-foundation/) | No. Series, Dimensionen, Workflow |
-| [4. Finanzwesen](04-finance/) | Sachkonten, Kreditoren, Debitoren, Anlagen, MwSt |
-| [5. Vertrieb & Marketing](05-sales-marketing/) | Verkaufsbelege, Preise, Mahnwesen |
-| [6. Einkauf](06-purchasing/) | Einkaufsbelege, Lieferanten |
-| [7. Lager & Logistik](07-inventory/) | Artikel, Lagerlogistik, Montage, Nachkalkulation |
-| [8. Produktion](08-manufacturing/) | Stücklisten, Arbeitspläne, Fertigungsaufträge |
-| [9. Projekte](09-jobs/) | Projektverwaltung, Ressourcen |
-| [10. Service](10-service/) | Serviceverträge, Serviceaufträge |
-| [11. Personal](11-hr/) | Mitarbeiter, Abwesenheiten |
-| [12. Kontaktmanagement](12-crm/) | Kontakte, Interaktionen, Verkaufschancen |
-| [13. Company Hub](13-company-hub/) | Mandantenübergreifende Verwaltung |
-| [14. Rollencenter & UX](14-role-centers-ux/) | Rollencenter, Pages, UI Patterns |
-| [15. APIs & Integration](15-apis-integration/) | REST, OData, Power Platform |
-| [16. AL-Entwicklung](16-al-development/) | AL-Syntax, Events, Extensions, Testing |
-| [17. Administration & Betrieb](17-administration/) | Installation, Benutzer, Monitoring |
-| [18. Migration & Upgrade](18-migration-upgrade/) | Upgrade-Pfade, Breaking Changes |
+### 1. [Überblick & Architektur](01-overview/)
+&nbsp;&nbsp;├─ [App-Stack & Namespaces](01-overview/architektur/)
+&nbsp;&nbsp;└─ [AL-Sprachmerkmale & Erweiterbarkeit](01-overview/al-erweiterbarkeit/)
+
+### 2. System Application
+🚧 in Vorbereitung
+
+### 3. Business Foundation
+🚧 in Vorbereitung
+
+### 4. [Finanzwesen](04-finance/)
+&nbsp;&nbsp;├─ [Fibu-Einrichtung (Tab. 98)](04-finance/fibu-einrichtung/)
+&nbsp;&nbsp;├─ [Kontenplan & Buchungsgruppen](04-finance/kontenplan-buchungsgruppen/)
+&nbsp;&nbsp;├─ [MwSt-System](04-finance/mwst-system/)
+&nbsp;&nbsp;├─ [Journale, Debitoren/Kreditoren](04-finance/journale-debitoren-kreditoren/)
+&nbsp;&nbsp;├─ [Bank, Anlagen & Währung](04-finance/bank-anlagen-waehrung/)
+&nbsp;&nbsp;├─ [Berichte, Budget & Analyse](04-finance/berichte-analyse-budget/)
+&nbsp;&nbsp;├─ [Konsolidierung, Abgrenzungen & IC](04-finance/konsolidierung-abgrenzung-ic/)
+&nbsp;&nbsp;├─ [Querschnitt — Fibu-Relevanz aller Module](04-finance/querschnitt/)
+&nbsp;&nbsp;└─ [Entwickler-Referenz](04-finance/entwickler/)
+
+### 5. [Vertrieb & Marketing](05-sales-marketing/)
+&nbsp;&nbsp;├─ [Einrichtung (Tab. 311)](05-sales-marketing/einrichtung/)
+&nbsp;&nbsp;├─ [Verkaufsbelege](05-sales-marketing/verkaufsbelege/)
+&nbsp;&nbsp;├─ [Preise & Rabatte](05-sales-marketing/preise-rabatte/)
+&nbsp;&nbsp;├─ [Mahnwesen](05-sales-marketing/mahnwesen/)
+&nbsp;&nbsp;├─ [Kunden](05-sales-marketing/kunden/)
+&nbsp;&nbsp;├─ [Kampagnen](05-sales-marketing/kampagnen/)
+&nbsp;&nbsp;└─ [Entwickler-Referenz](05-sales-marketing/entwickler/)
+
+### 6. [Einkauf](06-purchasing/)
+&nbsp;&nbsp;├─ [Einrichtung (Tab. 312)](06-purchasing/einrichtung/)
+&nbsp;&nbsp;├─ [Einkaufsbelege](06-purchasing/einkaufsbelege/)
+&nbsp;&nbsp;├─ [Preise & Rabatte](06-purchasing/preise-rabatte/)
+&nbsp;&nbsp;├─ [Kreditoren](06-purchasing/kreditoren/)
+&nbsp;&nbsp;├─ [Anforderungen](06-purchasing/anforderungen/)
+&nbsp;&nbsp;└─ [Entwickler-Referenz](06-purchasing/entwickler/)
+
+### 7. Lager & Logistik
+🚧 in Vorbereitung
+
+### 8. Produktion
+🚧 in Vorbereitung
+
+### 9. Projekte
+🚧 in Vorbereitung
+
+### 10. Service
+🚧 in Vorbereitung
+
+### 11. Personal
+🚧 in Vorbereitung
+
+### 12. Kontaktmanagement
+🚧 in Vorbereitung
+
+### 13. Company Hub
+🚧 in Vorbereitung
+
+### 14. Rollencenter & UX
+🚧 in Vorbereitung
+
+### 15. APIs & Integration
+🚧 in Vorbereitung
+
+### 16. AL-Entwicklung
+🚧 in Vorbereitung
+
+### 17. Administration & Betrieb
+🚧 in Vorbereitung
+
+### 18. Migration & Upgrade
+🚧 in Vorbereitung
 
 ## Quellen
 
