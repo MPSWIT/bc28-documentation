@@ -13,12 +13,12 @@ Das **Einkaufsmodul** verwaltet den gesamten Beschaffungsprozess — von der Lie
 
 | # | Thema | Beschreibung |
 |---|---|---|
-| 1 | **[Einrichtung (Tabelle 312)](einrichtung)** | 80+ Felder des Purchases & Payables Setup: Rabattbuchung, Nummernserien, Wareneingang, Hintergrundbuchung |
-| 2 | **[Einkaufsbelege](einkaufsbelege)** | Purchase Header/Line (Tabelle 38/39): Anfrage, Bestellung, Wareneingang, Rechnung, Gutschrift |
-| 3 | **[Preise & Rabatte](preise-rabatte)** | Einkaufspreislisten, Zeilenrabatte, Rechnungsrabatte, Preisberechnungsmethode |
-| 4 | **[Kreditoren](kreditoren)** | Kreditorenkarte (Tabelle 23), Zahlungsbedingungen, Kreditorenposten |
-| 5 | **[Anforderungen](anforderungen)** | Purchase Requisition + Worksheet |
-| 6 | **[Entwickler-Referenz](entwickler)** | Integrationsereignisse, Codeunits, Tabellen |
+| 1 | **[Einrichtung (Tabelle 312)]({{ '/06-purchasing/einrichtung/' | relative_url }})** | 80+ Felder des Purchases & Payables Setup: Rabattbuchung, Nummernserien, Wareneingang, Hintergrundbuchung |
+| 2 | **[Einkaufsbelege]({{ '/06-purchasing/einkaufsbelege/' | relative_url }})** | Purchase Header/Line (Tabelle 38/39): Anfrage, Bestellung, Wareneingang, Rechnung, Gutschrift |
+| 3 | **[Preise & Rabatte]({{ '/06-purchasing/preise-rabatte/' | relative_url }})** | Einkaufspreislisten, Zeilenrabatte, Rechnungsrabatte, Preisberechnungsmethode |
+| 4 | **[Kreditoren]({{ '/06-purchasing/kreditoren/' | relative_url }})** | Kreditorenkarte (Tabelle 23), Zahlungsbedingungen, Kreditorenposten |
+| 5 | **[Anforderungen]({{ '/06-purchasing/anforderungen/' | relative_url }})** | Purchase Requisition + Worksheet |
+| 6 | **[Entwickler-Referenz]({{ '/06-purchasing/entwickler/' | relative_url }})** | Integrationsereignisse, Codeunits, Tabellen |
 
 ## 🔗 Verwandte Kapitel
 
@@ -30,4 +30,4 @@ Das **Einkaufsmodul** verwaltet den gesamten Beschaffungsprozess — von der Lie
 
 ---
 
-| [← Zurück zur Übersicht]({{ '/index' | relative_url }}) | [Einrichtung →](einrichtung) |
+| [← Zurück zur Übersicht]({{ '/index' | relative_url }}) | [Einrichtung →]({{ '/06-purchasing/einrichtung/' | relative_url }}) |

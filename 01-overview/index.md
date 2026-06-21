@@ -9,9 +9,9 @@ Business Central 28 (Release Wave 1 2025) besteht aus einer **modularen App-Arch
 
 | # | Thema | Beschreibung |
 |---|---|---|
-| 1 | **[App-Stack & Namespaces](architektur)** | Drei Haupt-Apps, Namespace-Struktur, ID-Bereiche, Quellcode-Verzeichnisse |
-| 2 | **[AL-Sprachmerkmale & Erweiterbarkeit](al-erweiterbarkeit)** | Namensräume, Enums, Ereignisse, ObsoleteState, DataClassification |
+| 1 | **[App-Stack & Namespaces]({{ '/01-overview/architektur/' | relative_url }})** | Drei Haupt-Apps, Namespace-Struktur, ID-Bereiche, Quellcode-Verzeichnisse |
+| 2 | **[AL-Sprachmerkmale & Erweiterbarkeit]({{ '/01-overview/al-erweiterbarkeit/' | relative_url }})** | Namensräume, Enums, Ereignisse, ObsoleteState, DataClassification |
 
 ---
 
-| [← Zurück zur Übersicht]({{ '/index' | relative_url }}) | [App-Stack & Namespaces →](architektur) |
+| [← Zurück zur Übersicht]({{ '/index' | relative_url }}) | [App-Stack & Namespaces →]({{ '/01-overview/architektur/' | relative_url }}) |

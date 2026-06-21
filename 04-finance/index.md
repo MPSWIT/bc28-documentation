@@ -14,15 +14,15 @@ Die **Finanzbuchhaltung** (Fibu) ist das Herzstück von Business Central. Jede b
 
 | # | Thema | Beschreibung | Umfang |
 |---|---|---|---|
-| 1 | **[Fibu-Einrichtung (Tabelle 98)](fibu-einrichtung)** | Die 22 Felder des GL-Setup: Buchungszeiträume, Dimensionen, MwSt-Felder, Zahlungstoleranzen, Rundung, Berichtswährung, Aufgabenwarteschlange | 22 Felder, 66 Beispiele |
-| 2 | **[Kontenplan & Buchungsgruppen](kontenplan-buchungsgruppen)** | Sachkonten (Tabelle 15), die Buchungsmatrix (Gen. Posting Setup), Kontierungsschlüssel | 3 Themen, 9 Beispiele |
-| 3 | **[MwSt-System](mwst-system)** | VAT Posting Setup, MwSt-Abrechnung, Klauseln (Textbausteine), Satzänderungs-Tool, US Sales Tax | 4 Themen, 11 Beispiele |
-| 4 | **[Journale, Debitoren/Kreditoren](journale-debitoren-kreditoren)** | Fibu-Buchungsjournale, OP-Verwaltung, Zahlungsausgleich, Stornobuchungen | 3 Themen, 9 Beispiele |
-| 5 | **[Bank, Anlagen & Währung](bank-anlagen-waehrung)** | SEPA-Zahlungsverkehr, Bankabstimmung, Anlagenverwaltung (AfA), Fremdwährungen & Wechselkurse | 3 Themen, 9 Beispiele |
-| 6 | **[Berichte, Budget & Analyse](berichte-analyse-budget)** | Account Schedules (Bilanz/GuV/Cashflow), Budget-Erfassung & -Kontrolle, Analyseansichten | 3 Themen, 8 Beispiele |
-| 7 | **[Konsolidierung, Abgrenzungen & IC](konsolidierung-abgrenzung-ic)** | Konzernkonsolidierung, periodengerechte Abgrenzungen, Intercompany-Partner | 3 Themen, 9 Beispiele |
-| 8 | **[Fibu-Relevanz aller Module](querschnitt)** | Querschnitt: Wie Einkauf/Verkauf/Lager/Produktion/Service/Projekte/HR in die Fibu buchen + Dimensionskorrektur | 2 Themen, durchgängige Buchungskette |
-| 9 | **[Entwickler-Referenz](entwickler)** | Integrationsereignisse, Rollencenter für Finanzanwender, alle abhängigen Tabellen & Codeunits | 3 Themen, 45+ Tabellen |
+| 1 | **[Fibu-Einrichtung (Tabelle 98)]({{ '/04-finance/fibu-einrichtung/' | relative_url }})** | Die 22 Felder des GL-Setup: Buchungszeiträume, Dimensionen, MwSt-Felder, Zahlungstoleranzen, Rundung, Berichtswährung, Aufgabenwarteschlange | 22 Felder, 66 Beispiele |
+| 2 | **[Kontenplan & Buchungsgruppen]({{ '/04-finance/kontenplan-buchungsgruppen/' | relative_url }})** | Sachkonten (Tabelle 15), die Buchungsmatrix (Gen. Posting Setup), Kontierungsschlüssel | 3 Themen, 9 Beispiele |
+| 3 | **[MwSt-System]({{ '/04-finance/mwst-system/' | relative_url }})** | VAT Posting Setup, MwSt-Abrechnung, Klauseln (Textbausteine), Satzänderungs-Tool, US Sales Tax | 4 Themen, 11 Beispiele |
+| 4 | **[Journale, Debitoren/Kreditoren]({{ '/04-finance/journale-debitoren-kreditoren/' | relative_url }})** | Fibu-Buchungsjournale, OP-Verwaltung, Zahlungsausgleich, Stornobuchungen | 3 Themen, 9 Beispiele |
+| 5 | **[Bank, Anlagen & Währung]({{ '/04-finance/bank-anlagen-waehrung/' | relative_url }})** | SEPA-Zahlungsverkehr, Bankabstimmung, Anlagenverwaltung (AfA), Fremdwährungen & Wechselkurse | 3 Themen, 9 Beispiele |
+| 6 | **[Berichte, Budget & Analyse]({{ '/04-finance/berichte-analyse-budget/' | relative_url }})** | Account Schedules (Bilanz/GuV/Cashflow), Budget-Erfassung & -Kontrolle, Analyseansichten | 3 Themen, 8 Beispiele |
+| 7 | **[Konsolidierung, Abgrenzungen & IC]({{ '/04-finance/konsolidierung-abgrenzung-ic/' | relative_url }})** | Konzernkonsolidierung, periodengerechte Abgrenzungen, Intercompany-Partner | 3 Themen, 9 Beispiele |
+| 8 | **[Fibu-Relevanz aller Module]({{ '/04-finance/querschnitt/' | relative_url }})** | Querschnitt: Wie Einkauf/Verkauf/Lager/Produktion/Service/Projekte/HR in die Fibu buchen + Dimensionskorrektur | 2 Themen, durchgängige Buchungskette |
+| 9 | **[Entwickler-Referenz]({{ '/04-finance/entwickler/' | relative_url }})** | Integrationsereignisse, Rollencenter für Finanzanwender, alle abhängigen Tabellen & Codeunits | 3 Themen, 45+ Tabellen |
 
 ---
 

@@ -14,13 +14,13 @@ Das **Vertriebs- und Marketingmodul** verwaltet den gesamten Sales-Prozess — v
 
 | # | Thema | Beschreibung |
 |---|---|---|
-| 1 | **[Einrichtung (Tabelle 311)](einrichtung)** | Die 73 Felder des Sales & Receivables Setup: Rabattbuchung, Kreditwarnungen, Nummernserien, Archivierung, Hintergrundbuchung, Preisfindung |
-| 2 | **[Verkaufsbelege](verkaufsbelege)** | Sales Header/Line (Tabelle 36/37): Angebot, Rahmenauftrag, Auftrag, Rechnung, Gutschrift, Retoure |
-| 3 | **[Preise & Rabatte](preise-rabatte)** | Preisliste (Tabelle 7000), Verkaufspreise, Zeilenrabatte, Rechnungsrabatte, Preisberechnungsmethode |
-| 4 | **[Mahnwesen](mahnwesen)** | Mahnstufen, Mahnmethoden, Zinsrechnung, Gebühren, Finanzbuchungsverkehr |
-| 5 | **[Kundenverwaltung](kunden)** | Debitorenkarte (Tabelle 18), Buchungsgruppen, Kreditlimit, Zahlungsbedingungen, Lieferadressen |
-| 6 | **[Kampagnen & Segmente](kampagnen)** | Marketing-Kampagnen, Kundensegmente, Interaktionen, Verkaufschancen |
-| 7 | **[Entwickler-Referenz](entwickler)** | Integrationsereignisse, Codeunits, abhängige Tabellen |
+| 1 | **[Einrichtung (Tabelle 311)]({{ '/05-sales-marketing/einrichtung/' | relative_url }})** | Die 73 Felder des Sales & Receivables Setup: Rabattbuchung, Kreditwarnungen, Nummernserien, Archivierung, Hintergrundbuchung, Preisfindung |
+| 2 | **[Verkaufsbelege]({{ '/05-sales-marketing/verkaufsbelege/' | relative_url }})** | Sales Header/Line (Tabelle 36/37): Angebot, Rahmenauftrag, Auftrag, Rechnung, Gutschrift, Retoure |
+| 3 | **[Preise & Rabatte]({{ '/05-sales-marketing/preise-rabatte/' | relative_url }})** | Preisliste (Tabelle 7000), Verkaufspreise, Zeilenrabatte, Rechnungsrabatte, Preisberechnungsmethode |
+| 4 | **[Mahnwesen]({{ '/05-sales-marketing/mahnwesen/' | relative_url }})** | Mahnstufen, Mahnmethoden, Zinsrechnung, Gebühren, Finanzbuchungsverkehr |
+| 5 | **[Kundenverwaltung]({{ '/05-sales-marketing/kunden/' | relative_url }})** | Debitorenkarte (Tabelle 18), Buchungsgruppen, Kreditlimit, Zahlungsbedingungen, Lieferadressen |
+| 6 | **[Kampagnen & Segmente]({{ '/05-sales-marketing/kampagnen/' | relative_url }})** | Marketing-Kampagnen, Kundensegmente, Interaktionen, Verkaufschancen |
+| 7 | **[Entwickler-Referenz]({{ '/05-sales-marketing/entwickler/' | relative_url }})** | Integrationsereignisse, Codeunits, abhängige Tabellen |
 
 ---
 
@@ -76,4 +76,4 @@ Kundenkarte (Debitor)
 
 ---
 
-| [← Zurück zur Übersicht]({{ '/index' | relative_url }}) | [Weiter: Einrichtung →](einrichtung) |
+| [← Zurück zur Übersicht]({{ '/index' | relative_url }}) | [Weiter: Einrichtung →]({{ '/05-sales-marketing/einrichtung/' | relative_url }}) |
