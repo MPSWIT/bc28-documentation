@@ -5,7 +5,7 @@ baseurl: "/bc28-documentation"
 url: "https://mpswit.github.io"
 
 # Theme
-theme: jekyll-theme-cayman
+theme: jekyll-theme-hacker
 
 # No search engine indexing
 noindex: true
