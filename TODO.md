@@ -6,10 +6,10 @@
 ---
 
 ## 1. Überblick & Architektur
-- [ ] 1.1 Einleitung: Was ist neu in BC28?
-- [ ] 1.2 App-Architektur: System Application, Base Application, Business Foundation, Erweiterungen
-- [ ] 1.3 AL-Sprachfeatures in BC28 (Übersicht)
-- [ ] 1.4 OnPrem vs. SaaS: Bereitstellungsmodelle
+- [x] 1.1 Einleitung: Was ist neu in BC28?
+- [x] 1.2 App-Architektur: System Application, Base Application, Business Foundation, Erweiterungen
+- [x] 1.3 AL-Sprachfeatures in BC28 (Übersicht)
+- [x] 1.4 OnPrem vs. SaaS: Bereitstellungsmodelle
 
 ## 2. System Application
 - [ ] 2.1 Übersicht aller Module (app.json-Struktur, Abhängigkeiten)
@@ -27,7 +27,7 @@
 - [ ] 3.5 Weitere Foundation-Module
 
 ## 4. Base Application — Finance (Finanzwesen)
-- [ ] 4.1 General Ledger (Sachkonten, Buchungsgruppen, Setup)
+- [x] 4.1 General Ledger (Sachkonten, Buchungsgruppen, Setup) — 22 Felder mit je 3 Beispielen
 - [ ] 4.2 Accounts Payable (Kreditoren)
 - [ ] 4.3 Accounts Receivable / Sales (Debitoren, Verkauf)
 - [ ] 4.4 Fixed Assets (Anlagen)
@@ -120,5 +120,5 @@
 
 ---
 
-**Status:** 🔴 Noch kein Kapitel begonnen  
+**Status:** 🟡 2/18 Kapitel begonnen (1, 4) — 4.1 GL Setup vollständig  
 **Quellen:** BC28 OnPrem Artifacts (`~/ai/onprem/28.1.49838.49886/at/`), [BCApps Reference](https://microsoft.github.io/BCApps), [Microsoft Learn](https://learn.microsoft.com/dynamics365/business-central/)
