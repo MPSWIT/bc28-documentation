@@ -625,6 +625,133 @@ Offizielle BC-Überschrift: **Gutschriften als Storno mark.**
 
 ---
 
+## 4.9 Aktionen der Fibu-Einrichtungsseite
+
+Die Seite **Fibu Einrichtung** (Page 118) bietet zwei Aktionsgruppen — **Verarbeitung** und **Navigation** — sowie die hervorgehobenen Aktionen in der Aktionsleiste. Jede Aktion stößt einen komplexen Prozess an, der im Folgenden detailliert beschrieben wird.
+
 ---
+
+### 🔄 Aktion: Globale Dimensionscodes ändern
+
+> **Ort:** Verarbeitung → Funktionen → **Globale Dimensionscodes ändern**
+> **Öffnet:** Page 577 "Change Global Dimensions"
+> **Codeunit:** 483 "Change Global Dimensions"
+> **Berechtigung:** `TableData Dimension = M` (Ändern)
+
+Die Aktion öffnet eine eigene Seite, die den Austausch einer oder beider globaler Dimensionen ermöglicht (z. B. Wechsel von „Abteilung/Projekt" auf „Kostenstelle/Division"). **Die globalen Dimensionscodes sind auf der Fibu-Einrichtungsseite gesperrt** (`Editable = false`) — diese Aktion ist der einzige Weg, sie zu ändern.
+
+**Ablauf Schritt für Schritt:**
+
+1. **Seite öffnet sich** — sie zeigt die aktuellen Global Dimension 1/2 und lässt neue Codes auswählen. Ein Stilwechsel („Ambiguous") markiert visuell, welche Codes geändert werden.
+
+2. **Verarbeitungsmodus wählen:**
+   - **Sequenziell (Start):** Läuft in der aktuellen Session. Alle betroffenen Tabellen werden gesperrt — andere Benutzer können währenddessen nicht auf diese Tabellen zugreifen. Geeignet für kleine Datenmengen.
+   - **Parallel (Prepare → Start):** Zweistufiger Prozess:
+     - **Prepare:** Füllt das Log-Infobox mit der Liste aller betroffenen Tabellen. Der Benutzer sieht den Umfang der Änderung.
+     - **Start:** Startet einen Hintergrundjob über die Aufgabenwarteschlange. **Wichtig:** Vor dem Start muss der Benutzer sich ab- und wieder anmelden, damit die Session keine Sperren auf den zu ändernden Tabellen hält.
+   - **Reset:** Bricht eine vorbereitete Änderung ab, bevor sie gestartet wurde (`ResetState()`).
+
+3. **Was wird aktualisiert?** Der Codeunit 483 durchläuft **alle** folgenden Tabellen und aktualisiert die globalen Dimensionscodes:
+   - **Finanzbuchhaltung:** G/L Entry, VAT Entry, Detailed Cust./Vendor Ledg. Entry
+   - **Debitoren/Kreditoren:** Cust. Ledger Entry, Vendor Ledger Entry
+   - **Verkauf (alle gebuchten Belege):** Sales Shipment Header/Line, Sales Invoice Header/Line, Sales Cr.Memo Header/Line
+   - **Einkauf (alle gebuchten Belege):** Purch. Rcpt. Header/Line, Purch. Inv. Header/Line, Purch. Cr. Memo Hdr./Line
+   - **Lager:** Item Ledger Entry, Phys. Inventory Ledger Entry, Invt. Receipt Header/Line, Invt. Shipment Header/Line, Posted Assembly Header/Line
+   - **Anlagen:** FA Ledger Entry, Maintenance Ledger Entry, Ins. Coverage Ledger Entry
+   - **Bank:** Bank Account Ledger Entry
+   - **Projekte/Ressourcen:** Job Ledger Entry, Res. Ledger Entry, Job WIP G/L Entry
+   - **Personal:** Employee Ledger Entry, Detailed Employee Ledger Entry
+   - **Mahnwesen/Zinsen:** Issued Reminder Header/Line, Reminder/Fin. Charge Entry, Issued Fin. Charge Memo Header/Line
+   - **Fertigung (vor BC28):** Production Order, Prod. Order Line/Component/Routing Line usw.
+
+4. **Fortschrittsverfolgung:** Über das eingebettete `Change Global Dim. Log Entries`-Part kann der Status jeder Tabelle verfolgt werden.
+
+5. **Nach Abschluss:** Die globalen Dimensionscodes in der Fibu-Einrichtung sind aktualisiert. Shortcut Dim 1/2 werden automatisch mitgezogen (siehe `OnValidate` der Tabelle 98).
+
+**Beispiel — Ein Filialunternehmen reorganisiert seine Dimensionen:**
+> Das Unternehmen hat bisher nach Abteilung und Projekt analysiert. Nach einer Umstrukturierung soll nun nach Kostenstelle und Region ausgewertet werden. 150.000 Sachposten, 80.000 Debitorenposten und 50.000 Kreditorenposten sind betroffen.
+> ➜ Administrator öffnet „Globale Dimensionscodes ändern", wählt „Parallel", klickt „Prepare" → sieht die Liste der 30 betroffenen Tabellen → meldet sich ab und wieder an → klickt „Start".
+> **Ergebnis:** Der Hintergrundjob läuft ca. 20 Minuten. Alle historischen Buchungen behalten ihre Dimensionswerte — die neuen Codes gelten für zukünftige Buchungen.
+
+---
+
+### 💰 Aktion: Zahlungstoleranz ändern
+
+> **Ort:** Verarbeitung → Funktionen → **Zahlungstoleranz ändern**
+> **Öffnet:** Report 34 "Change Payment Tolerance" (Bericht mit Request Page)
+> **Berechtigung:** `TableData Currency = rm`, `TableData Cust./Vendor Ledger Entry = rm`, `TableData General Ledger Setup = rm`
+
+Die Aktion öffnet einen Verarbeitungsbericht, der Zahlungstoleranz-Prozentsatz und -Maximalbetrag auf einmal ändern kann — entweder für alle Währungen gleichzeitig oder für eine einzelne Währung.
+
+**Ablauf Schritt für Schritt:**
+
+1. **Request Page öffnet sich** mit folgenden Optionen:
+   - **Alle Währungen:** Wenn aktiviert, wird derselbe Toleranzwert auf LCY und ALLE Fremdwährungen angewendet. Die Felder für einzelne Währung werden deaktiviert.
+   - **Währungscode:** Eine spezifische Währung auswählen (Lookup auf die Währungstabelle). Leer = Mandantenwährung (LCY).
+   - **Zahlungstoleranz %:** Neuer Prozentsatz (0–100, 5 Dezimalstellen).
+   - **Max. Zahlungstoleranzbetrag:** Neuer Maximalbetrag (Dezimalstellen gemäß `Amount Decimal Places` der gewählten Währung).
+
+2. **Beim Ausführen (OnPostReport):**
+   - Fall **Alle Währungen:** Iteriert über ALLE Währungsdatensätze (`Currency.Find('-')`) und setzt `Payment Tolerance %` und `Max. Payment Tolerance Amount` auf die neuen Werte. Anschließend werden die Werte auch in der **General Ledger Setup**-Tabelle gesetzt (für LCY).
+   - Fall **Einzelne Währung:** Aktualisiert nur den gewählten Währungsdatensatz (oder GL Setup, wenn LCY).
+   - Alle Beträge werden auf `Amount Rounding Precision` der jeweiligen Währung gerundet.
+
+3. **Bestätigungsdialog:** *„Möchten Sie alle offenen Posten für jeden Debitor und Kreditor ändern, der nicht gesperrt ist?"*
+   - **Wenn Ja:** Der Report iteriert durch ALLE Kunden (Tabelle Customer) und ALLE Kreditoren (Tabelle Vendor).
+   - Für jeden Kunden/Kreditor, bei dem **Block Payment Tolerance = Nein**, werden ALLE offenen Posten (`Open = true`) vom Typ Rechnung/Gutschrift in der jeweiligen Währung geladen.
+   - **Neuberechnung pro Posten:**
+     ```al
+     Max. Payment Tolerance = Round(NewPaymentTolerancePct × Remaining Amount / 100, AmountRoundingPrecision)
+     ```
+     Wenn der errechnete Wert 0 ist und ein Maximalbetrag gesetzt wurde, ODER wenn der errechnete Wert den Maximalbetrag überschreitet, wird der Maximalbetrag verwendet.
+   - Wenn der verbleibende Betrag kleiner als die Toleranz ist, wird die Toleranz auf den verbleibenden Betrag begrenzt.
+   - Integration-Events `OnChangeCustLedgEntriesOnBeforeModifyCustLedgEntry` und `OnChangeVendLedgEntryOnBeforeModifyVendLedgEntry` ermöglichen Erweiterungen.
+
+**Beispiel — Globales Toleranz-Update nach Betriebsprüfung:**
+> Der Steuerberater empfiehlt, die Zahlungstoleranz von 2% auf 1% zu senken und den Maximalbetrag von 100 € auf 50 € zu reduzieren. Das Unternehmen hat 3 Fremdwährungskonten (USD, CHF, GBP) und 2.300 offene Debitorenposten.
+> ➜ Buchhalter öffnet „Zahlungstoleranz ändern" → aktiviert „Alle Währungen" → setzt 1% und 50 € → führt aus → bestätigt die Aktualisierung der offenen Posten.
+> **Ergebnis:** Die Währungstabelle wird aktualisiert (EUR, USD, CHF, GBP), die GL Setup-Tabelle wird aktualisiert. Anschließend werden 2.300 Debitorenposten und 800 Kreditorenposten neu berechnet. Der Vorgang dauert je nach Datenmenge 2–5 Minuten.
+
+---
+
+### 🧭 Navigationsaktionen
+
+Die folgenden Aktionen öffnen verwandte Einrichtungsseiten und dienen der schnellen Navigation:
+
+| Aktion | Öffnet | Beschreibung |
+|--------|--------|-------------|
+| **Buchungsperioden** | Page "Accounting Periods" | Geschäftsjahresperioden einrichten (z. B. 12 Monatsperioden). |
+| **Dimensionen** | Page "Dimensions" | Alle Dimensionen verwalten (Abteilung, Projekt, Kostenstelle usw.). |
+| **Benutzereinrichtung** | Page "User Setup" | Buchungsberechtigungen pro Benutzer einschränken. |
+| **Cashflow Einrichtung** | Page "Cash Flow Setup" | Konten für Cashflow-Prognosen festlegen. |
+| **Bankexport/-import Einr.** | Page "Bank Export/Import Setup" | Formate für Bankauszugsimport und Zahlungsexport. |
+| **Allgemeine Buchungsmatrix** | Page "General Posting Setup" | Kombinationen aus Gen. Geschäftsbuchungsgruppe × Gen. Produktbuchungsgruppe auf Sachkonten abbilden. |
+| **Gen. Geschäftsbuchungsgruppe** | Page "Gen. Business Posting Groups" | Handelsbezogene Buchungsgruppen (Inland, EU, Export usw.). |
+| **Gen. Produktbuchungsgruppe** | Page "Gen. Product Posting Groups" | Artikelbezogene Buchungsgruppen (Einzelhandel, Großhandel usw.). |
+| **MwSt.-Buchungsmatrix** | Page "VAT Posting Setup" | Kombinationen aus MwSt.-Geschäftsbuchungsgruppe × MwSt.-Produktbuchungsgruppe auf MwSt-Konten abbilden. |
+| **MwSt. Geschäftsbuchungsgruppe** | Page "VAT Business Posting Groups" | Handelstypen für MwSt (Inland, EU, Drittland usw.). |
+| **MwSt. Produktbuchungsgruppe** | Page "VAT Product Posting Groups" | Artikelspezifische MwSt-Gruppen (Normal, Ermäßigt usw.). |
+| **MwSt.-Abrechnung einrichten** | Page "VAT Report Setup" | Nummernserien und Optionen für die UStVA. |
+| **Bankbuchungsgruppe** | Page "Bank Account Posting Groups" | Bankkontobuchungsgruppen für Zahlungsein- und -ausgänge. |
+| **Allgemeine Buch.-Blattvorlagen** | Page "General Journal Templates" | Vorlagen und Batch-Namen für Fibu-Buch.-Blätter. |
+| **MwSt.-Abrechnungsvorlagen** | Page "VAT Statement Templates" | Vorlagen für MwSt-Abrechnungen. |
+
+---
+
+### 📌 Hervorgehobene Aktionen (Aktionsleiste)
+
+Die Aktionsleiste gruppiert die wichtigsten Aktionen in thematische Kategorien:
+
+| Kategorie | Aktionen |
+|-----------|----------|
+| **Prozess** | Zahlungstoleranz ändern, Globale Dimensionscodes ändern |
+| **Buchung** | Allgemeine Buchungsmatrix, Gen. Geschäftsbuchungsgruppe, Gen. Produktbuchungsgruppe |
+| **Allgemein** | Buchungsperioden, Dimensionen, Benutzereinrichtung, Cashflow Einrichtung |
+| **MwSt.** | MwSt.-Abrechnungsvorlagen, MwSt.-Buchungsmatrix, MwSt. Geschäftsbuchungsgruppe, MwSt. Produktbuchungsgruppe, MwSt.-Abrechnung einrichten |
+| **Bank** | Bankexport/-import Einr., Bankbuchungsgruppe |
+| **Buch.-Blattvorlagen** | Allgemeine Buch.-Blattvorlagen |
+
+---
+
 
 | [← Zurück zur Finanzwesen-Übersicht]({{ '/04-finance/' | relative_url }}) | [Kontenplan & Buchungsgruppen →]({{ '/04-finance/kontenplan-buchungsgruppen/' | relative_url }}) |
