@@ -10,6 +10,15 @@ title: "Fibu-Einrichtung (Tabelle 98)"
 4. Finanzwesen
  │
  ├─▶ Fibu-Einrichtung (Tab. 98)  ← Sie sind hier
+ │    ├── <a href="#41-buchungszeiträume">4.1 Buchungszeiträume</a>
+ │    ├── <a href="#42-dimensionen">4.2 Dimensionen</a>
+ │    ├── <a href="#43-mehrwertsteuer">4.3 Mehrwertsteuer</a>
+ │    ├── <a href="#44-zahlungstoleranzen--skonto">4.4 Zahlungstoleranzen &amp; Skonto</a>
+ │    ├── <a href="#45-rundung--nachkommastellen">4.5 Rundung &amp; Nachkommastellen</a>
+ │    ├── <a href="#46-zusätzliche-berichtswährung">4.6 Berichtswährung</a>
+ │    ├── <a href="#47-aufgabenwarteschlange--hintergrundbuchung">4.7 Aufgabenwarteschlange</a>
+ │    ├── <a href="#48-sonstige-wichtige-felder">4.8 Sonstige Felder</a>
+ │    └── <a href="#49-aktionen-der-fibu-einrichtungsseite">4.9 Aktionen</a>
  ├── <a href="{{ '/04-finance/kontenplan-buchungsgruppen/' | relative_url }}">Kontenplan &amp; Buchungsgruppen</a>
  ├── <a href="{{ '/04-finance/mwst-system/' | relative_url }}">MwSt-System</a>
  ├── <a href="{{ '/04-finance/journale-debitoren-kreditoren/' | relative_url }}">Journale, Debitoren/Kreditoren</a>

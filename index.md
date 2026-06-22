@@ -31,6 +31,15 @@ Business Central 28
  │
  ├── 4.  <a href="{{ '/04-finance/' | relative_url }}">Finanzwesen</a>
  │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}">Fibu-Einrichtung (Tab. 98)</a>
+ │    │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}#41-buchungszeiträume">4.1 Buchungszeiträume</a>
+ │    │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}#42-dimensionen">4.2 Dimensionen</a>
+ │    │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}#43-mehrwertsteuer">4.3 Mehrwertsteuer</a>
+ │    │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}#44-zahlungstoleranzen--skonto">4.4 Zahlungstoleranzen &amp; Skonto</a>
+ │    │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}#45-rundung--nachkommastellen">4.5 Rundung &amp; Nachkommastellen</a>
+ │    │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}#46-zusätzliche-berichtswährung">4.6 Berichtswährung</a>
+ │    │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}#47-aufgabenwarteschlange--hintergrundbuchung">4.7 Aufgabenwarteschlange</a>
+ │    │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}#48-sonstige-wichtige-felder">4.8 Sonstige Felder</a>
+ │    │    └── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}#49-aktionen-der-fibu-einrichtungsseite">4.9 Aktionen</a>
  │    ├── <a href="{{ '/04-finance/kontenplan-buchungsgruppen/' | relative_url }}">Kontenplan &amp; Buchungsgruppen</a>
  │    ├── <a href="{{ '/04-finance/mwst-system/' | relative_url }}">MwSt-System</a>
  │    ├── <a href="{{ '/04-finance/journale-debitoren-kreditoren/' | relative_url }}">Journale, Debitoren/Kreditoren</a>
