@@ -14,90 +14,82 @@ die Module, Namespaces, Tabellen, Pages und Codeunits, aus denen BC28 besteht.
 
 ## Aufbau dieser Dokumentation
 
-Die Dokumentation folgt der App-Struktur von BC28. Ausgearbeitete Kapitel zeigen alle Unterthemen:
+Die Dokumentation folgt der App-Struktur von BC28:
 
-### 1. [Überblick & Architektur](01-overview/)
-&nbsp;&nbsp;├─ [App-Stack & Namespaces](01-overview/architektur/)
-&nbsp;&nbsp;└─ [AL-Sprachmerkmale & Erweiterbarkeit](01-overview/al-erweiterbarkeit/)
-
-### 2. System Application
-🚧 in Vorbereitung
-
-### 3. Business Foundation
-🚧 in Vorbereitung
-
-### 4. [Finanzwesen](04-finance/)
-&nbsp;&nbsp;├─ [Fibu-Einrichtung (Tab. 98)](04-finance/fibu-einrichtung/)
-&nbsp;&nbsp;├─ [Kontenplan & Buchungsgruppen](04-finance/kontenplan-buchungsgruppen/)
-&nbsp;&nbsp;├─ [MwSt-System](04-finance/mwst-system/)
-&nbsp;&nbsp;├─ [Journale, Debitoren/Kreditoren](04-finance/journale-debitoren-kreditoren/)
-&nbsp;&nbsp;├─ [Bank, Anlagen & Währung](04-finance/bank-anlagen-waehrung/)
-&nbsp;&nbsp;├─ [Berichte, Budget & Analyse](04-finance/berichte-analyse-budget/)
-&nbsp;&nbsp;├─ [Konsolidierung, Abgrenzungen & IC](04-finance/konsolidierung-abgrenzung-ic/)
-&nbsp;&nbsp;├─ [Querschnitt — Fibu-Relevanz aller Module](04-finance/querschnitt/)
-&nbsp;&nbsp;└─ [Entwickler-Referenz](04-finance/entwickler/)
-
-### 5. [Vertrieb & Marketing](05-sales-marketing/)
-&nbsp;&nbsp;├─ [Einrichtung (Tab. 311)](05-sales-marketing/einrichtung/)
-&nbsp;&nbsp;├─ [Verkaufsbelege](05-sales-marketing/verkaufsbelege/)
-&nbsp;&nbsp;├─ [Preise & Rabatte](05-sales-marketing/preise-rabatte/)
-&nbsp;&nbsp;├─ [Mahnwesen](05-sales-marketing/mahnwesen/)
-&nbsp;&nbsp;├─ [Kunden](05-sales-marketing/kunden/)
-&nbsp;&nbsp;├─ [Kampagnen](05-sales-marketing/kampagnen/)
-&nbsp;&nbsp;└─ [Entwickler-Referenz](05-sales-marketing/entwickler/)
-
-### 6. [Einkauf](06-purchasing/)
-&nbsp;&nbsp;├─ [Einrichtung (Tab. 312)](06-purchasing/einrichtung/)
-&nbsp;&nbsp;├─ [Einkaufsbelege](06-purchasing/einkaufsbelege/)
-&nbsp;&nbsp;├─ [Preise & Rabatte](06-purchasing/preise-rabatte/)
-&nbsp;&nbsp;├─ [Kreditoren](06-purchasing/kreditoren/)
-&nbsp;&nbsp;├─ [Anforderungen](06-purchasing/anforderungen/)
-&nbsp;&nbsp;└─ [Entwickler-Referenz](06-purchasing/entwickler/)
-
-### 7. Lager & Logistik
-🚧 in Vorbereitung
-
-### 8. Produktion
-🚧 in Vorbereitung
-
-### 9. Projekte
-🚧 in Vorbereitung
-
-### 10. Service
-🚧 in Vorbereitung
-
-### 11. Personal
-🚧 in Vorbereitung
-
-### 12. Kontaktmanagement
-🚧 in Vorbereitung
-
-### 13. Company Hub
-🚧 in Vorbereitung
-
-### 14. Rollencenter & UX
-🚧 in Vorbereitung
-
-### 15. APIs & Integration
-🚧 in Vorbereitung
-
-### 16. AL-Entwicklung
-🚧 in Vorbereitung
-
-### 17. Administration & Betrieb
-🚧 in Vorbereitung
-
-### 18. Migration & Upgrade
-🚧 in Vorbereitung
-
-### 19. [ToDo](19-todo/)
-&nbsp;&nbsp;├─ [Wertefluss in Business Central](19-todo/wertefluss/)
-&nbsp;&nbsp;└─ [Anlagen im Bau](19-todo/anlagen-im-bau/)
-
-### 20. [FAQ — Ausgewählte Fragen](20-faq/)
-&nbsp;&nbsp;├─ [Rabatt vs. Skonto](20-faq/fachkonzepte/)
-&nbsp;&nbsp;├─ [Methodik & Quellen](20-faq/methodik-quellen/)
-&nbsp;&nbsp;└─ [Jekyll-Struktur](20-faq/jekyll-struktur/)
+<pre>
+Business Central 28
+ │
+ ├─▶ <strong>Übersicht</strong>  ← Sie sind hier
+ │
+ ├── 1.  <a href="{{ '/01-overview/' | relative_url }}">Überblick &amp; Architektur</a>
+ │    ├── <a href="{{ '/01-overview/architektur/' | relative_url }}">App-Stack &amp; Namespaces</a>
+ │    └── <a href="{{ '/01-overview/al-erweiterbarkeit/' | relative_url }}">AL-Sprachmerkmale &amp; Erweiterbarkeit</a>
+ │
+ ├── 2.  System Application  🚧
+ │
+ ├── 3.  Business Foundation  🚧
+ │
+ ├── 4.  <a href="{{ '/04-finance/' | relative_url }}">Finanzwesen</a>
+ │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}">Fibu-Einrichtung (Tab. 98)</a>
+ │    ├── <a href="{{ '/04-finance/kontenplan-buchungsgruppen/' | relative_url }}">Kontenplan &amp; Buchungsgruppen</a>
+ │    ├── <a href="{{ '/04-finance/mwst-system/' | relative_url }}">MwSt-System</a>
+ │    ├── <a href="{{ '/04-finance/journale-debitoren-kreditoren/' | relative_url }}">Journale, Debitoren/Kreditoren</a>
+ │    ├── <a href="{{ '/04-finance/bank-anlagen-waehrung/' | relative_url }}">Bank, Anlagen &amp; Währung</a>
+ │    ├── <a href="{{ '/04-finance/berichte-analyse-budget/' | relative_url }}">Berichte, Budget &amp; Analyse</a>
+ │    ├── <a href="{{ '/04-finance/konsolidierung-abgrenzung-ic/' | relative_url }}">Konsolidierung, Abgrenzungen &amp; IC</a>
+ │    ├── <a href="{{ '/04-finance/querschnitt/' | relative_url }}">Querschnitt — Fibu-Relevanz aller Module</a>
+ │    └── <a href="{{ '/04-finance/entwickler/' | relative_url }}">Entwickler-Referenz</a>
+ │
+ ├── 5.  <a href="{{ '/05-sales-marketing/' | relative_url }}">Vertrieb &amp; Marketing</a>
+ │    ├── <a href="{{ '/05-sales-marketing/einrichtung/' | relative_url }}">Einrichtung (Tab. 311)</a>
+ │    ├── <a href="{{ '/05-sales-marketing/verkaufsbelege/' | relative_url }}">Verkaufsbelege</a>
+ │    ├── <a href="{{ '/05-sales-marketing/preise-rabatte/' | relative_url }}">Preise &amp; Rabatte</a>
+ │    ├── <a href="{{ '/05-sales-marketing/mahnwesen/' | relative_url }}">Mahnwesen</a>
+ │    ├── <a href="{{ '/05-sales-marketing/kunden/' | relative_url }}">Kunden</a>
+ │    ├── <a href="{{ '/05-sales-marketing/kampagnen/' | relative_url }}">Kampagnen</a>
+ │    └── <a href="{{ '/05-sales-marketing/entwickler/' | relative_url }}">Entwickler-Referenz</a>
+ │
+ ├── 6.  <a href="{{ '/06-purchasing/' | relative_url }}">Einkauf</a>
+ │    ├── <a href="{{ '/06-purchasing/einrichtung/' | relative_url }}">Einrichtung (Tab. 312)</a>
+ │    ├── <a href="{{ '/06-purchasing/einkaufsbelege/' | relative_url }}">Einkaufsbelege</a>
+ │    ├── <a href="{{ '/06-purchasing/preise-rabatte/' | relative_url }}">Preise &amp; Rabatte</a>
+ │    ├── <a href="{{ '/06-purchasing/kreditoren/' | relative_url }}">Kreditoren</a>
+ │    ├── <a href="{{ '/06-purchasing/anforderungen/' | relative_url }}">Anforderungen</a>
+ │    └── <a href="{{ '/06-purchasing/entwickler/' | relative_url }}">Entwickler-Referenz</a>
+ │
+ ├── 7.  Lager &amp; Logistik  🚧
+ │
+ ├── 8.  Produktion  🚧
+ │
+ ├── 9.  Projekte  🚧
+ │
+ ├── 10. Service  🚧
+ │
+ ├── 11. Personal  🚧
+ │
+ ├── 12. Kontaktmanagement  🚧
+ │
+ ├── 13. Company Hub  🚧
+ │
+ ├── 14. Rollencenter &amp; UX  🚧
+ │
+ ├── 15. APIs &amp; Integration  🚧
+ │
+ ├── 16. AL-Entwicklung  🚧
+ │
+ ├── 17. Administration &amp; Betrieb  🚧
+ │
+ ├── 18. Migration &amp; Upgrade  🚧
+ │
+ ├── 19. <a href="{{ '/19-todo/' | relative_url }}">ToDo</a>
+ │    ├── <a href="{{ '/19-todo/wertefluss/' | relative_url }}">Wertefluss in Business Central</a>
+ │    └── <a href="{{ '/19-todo/anlagen-im-bau/' | relative_url }}">Anlagen im Bau</a>
+ │
+ └── 20. <a href="{{ '/20-faq/' | relative_url }}">FAQ — Ausgewählte Fragen</a>
+      ├── <a href="{{ '/20-faq/fachkonzepte/' | relative_url }}">Rabatt vs. Skonto</a>
+      ├── <a href="{{ '/20-faq/methodik-quellen/' | relative_url }}">Methodik &amp; Quellen</a>
+      └── <a href="{{ '/20-faq/jekyll-struktur/' | relative_url }}">Jekyll-Struktur</a>
+</pre>
 
 ## Quellen
 
