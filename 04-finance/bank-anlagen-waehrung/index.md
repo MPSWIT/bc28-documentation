@@ -6,19 +6,19 @@ title: "Bank, Anlagen & Währung"
 > 📄 **Zurück zur [Finanzwesen-Übersicht]({{ '/04-finance/' | relative_url }})**
 > 📋 SEPA-Zahlungsverkehr und Bankabstimmung, Anlagenverwaltung mit Abschreibungen, Fremdwährungen und Wechselkursanpassungen.
 
-```
+<pre>
 4. Finanzwesen
  │
- ├── [Fibu-Einrichtung (Tab. 98)]({{ '/04-finance/fibu-einrichtung/' | relative_url }})
- ├── [Kontenplan & Buchungsgruppen]({{ '/04-finance/kontenplan-buchungsgruppen/' | relative_url }})
- ├── [MwSt-System]({{ '/04-finance/mwst-system/' | relative_url }})
- ├── [Journale, Debitoren/Kreditoren]({{ '/04-finance/journale-debitoren-kreditoren/' | relative_url }})
- ├─▶ Bank, Anlagen & Währung  ← Sie sind hier
- ├── [Berichte, Budget & Analyse]({{ '/04-finance/berichte-analyse-budget/' | relative_url }})
- ├── [Konsolidierung, Abgrenzungen & IC]({{ '/04-finance/konsolidierung-abgrenzung-ic/' | relative_url }})
- ├── [Querschnitt — Fibu-Relevanz aller Module]({{ '/04-finance/querschnitt/' | relative_url }})
- └── [Entwickler-Referenz]({{ '/04-finance/entwickler/' | relative_url }})
-```
+ ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}">Fibu-Einrichtung (Tab. 98)</a>
+ ├── <a href="{{ '/04-finance/kontenplan-buchungsgruppen/' | relative_url }}">Kontenplan &amp; Buchungsgruppen</a>
+ ├── <a href="{{ '/04-finance/mwst-system/' | relative_url }}">MwSt-System</a>
+ ├── <a href="{{ '/04-finance/journale-debitoren-kreditoren/' | relative_url }}">Journale, Debitoren/Kreditoren</a>
+ ├─▶ Bank, Anlagen &amp; Währung  ← Sie sind hier
+ ├── <a href="{{ '/04-finance/berichte-analyse-budget/' | relative_url }}">Berichte, Budget &amp; Analyse</a>
+ ├── <a href="{{ '/04-finance/konsolidierung-abgrenzung-ic/' | relative_url }}">Konsolidierung, Abgrenzungen &amp; IC</a>
+ ├── <a href="{{ '/04-finance/querschnitt/' | relative_url }}">Querschnitt — Fibu-Relevanz aller Module</a>
+ └── <a href="{{ '/04-finance/entwickler/' | relative_url }}">Entwickler-Referenz</a>
+</pre>
 
 ---
 

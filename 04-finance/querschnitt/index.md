@@ -6,19 +6,19 @@ title: "Fibu-Relevanz aller Module & Dimensionskorrektur"
 > 📄 **Zurück zur [Finanzwesen-Übersicht]({{ '/04-finance/' | relative_url }})**
 > 📋 Querschnitt: Wie Einkauf, Verkauf, Lager, Produktion, Service, Projekte und HR in die Fibu buchen. Nachträgliche Dimensionskorrektur auf gebuchten Posten.
 
-```
+<pre>
 4. Finanzwesen
  │
- ├── [Fibu-Einrichtung (Tab. 98)]({{ '/04-finance/fibu-einrichtung/' | relative_url }})
- ├── [Kontenplan & Buchungsgruppen]({{ '/04-finance/kontenplan-buchungsgruppen/' | relative_url }})
- ├── [MwSt-System]({{ '/04-finance/mwst-system/' | relative_url }})
- ├── [Journale, Debitoren/Kreditoren]({{ '/04-finance/journale-debitoren-kreditoren/' | relative_url }})
- ├── [Bank, Anlagen & Währung]({{ '/04-finance/bank-anlagen-waehrung/' | relative_url }})
- ├── [Berichte, Budget & Analyse]({{ '/04-finance/berichte-analyse-budget/' | relative_url }})
- ├── [Konsolidierung, Abgrenzungen & IC]({{ '/04-finance/konsolidierung-abgrenzung-ic/' | relative_url }})
+ ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}">Fibu-Einrichtung (Tab. 98)</a>
+ ├── <a href="{{ '/04-finance/kontenplan-buchungsgruppen/' | relative_url }}">Kontenplan &amp; Buchungsgruppen</a>
+ ├── <a href="{{ '/04-finance/mwst-system/' | relative_url }}">MwSt-System</a>
+ ├── <a href="{{ '/04-finance/journale-debitoren-kreditoren/' | relative_url }}">Journale, Debitoren/Kreditoren</a>
+ ├── <a href="{{ '/04-finance/bank-anlagen-waehrung/' | relative_url }}">Bank, Anlagen &amp; Währung</a>
+ ├── <a href="{{ '/04-finance/berichte-analyse-budget/' | relative_url }}">Berichte, Budget &amp; Analyse</a>
+ ├── <a href="{{ '/04-finance/konsolidierung-abgrenzung-ic/' | relative_url }}">Konsolidierung, Abgrenzungen &amp; IC</a>
  ├─▶ Querschnitt — Fibu-Relevanz aller Module  ← Sie sind hier
- └── [Entwickler-Referenz]({{ '/04-finance/entwickler/' | relative_url }})
-```
+ └── <a href="{{ '/04-finance/entwickler/' | relative_url }}">Entwickler-Referenz</a>
+</pre>
 
 ---
 
