@@ -6,6 +6,20 @@ title: "Bank, Anlagen & Währung"
 > 📄 **Zurück zur [Finanzwesen-Übersicht]({{ '/04-finance/' | relative_url }})**
 > 📋 SEPA-Zahlungsverkehr und Bankabstimmung, Anlagenverwaltung mit Abschreibungen, Fremdwährungen und Wechselkursanpassungen.
 
+```
+4. Finanzwesen
+ │
+ ├── [Fibu-Einrichtung (Tab. 98)]({{ '/04-finance/fibu-einrichtung/' | relative_url }})
+ ├── [Kontenplan & Buchungsgruppen]({{ '/04-finance/kontenplan-buchungsgruppen/' | relative_url }})
+ ├── [MwSt-System]({{ '/04-finance/mwst-system/' | relative_url }})
+ ├── [Journale, Debitoren/Kreditoren]({{ '/04-finance/journale-debitoren-kreditoren/' | relative_url }})
+ ├─▶ Bank, Anlagen & Währung  ← Sie sind hier
+ ├── [Berichte, Budget & Analyse]({{ '/04-finance/berichte-analyse-budget/' | relative_url }})
+ ├── [Konsolidierung, Abgrenzungen & IC]({{ '/04-finance/konsolidierung-abgrenzung-ic/' | relative_url }})
+ ├── [Querschnitt — Fibu-Relevanz aller Module]({{ '/04-finance/querschnitt/' | relative_url }})
+ └── [Entwickler-Referenz]({{ '/04-finance/entwickler/' | relative_url }})
+```
+
 ---
 
 ## 4.14 Bank & Zahlungsverkehr

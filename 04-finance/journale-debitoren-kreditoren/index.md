@@ -6,6 +6,20 @@ title: "Fibu-Journale, Debitoren/Kreditoren & Stornobuchungen"
 > 📄 **Zurück zur [Finanzwesen-Übersicht]({{ '/04-finance/' | relative_url }})**
 > 📋 Tägliche Buchungsarbeit: Fibu-Journale, OP-Verwaltung (Debitoren/Kreditoren), Zahlungsausgleich und revisionssichere Stornobuchungen.
 
+```
+4. Finanzwesen
+ │
+ ├── [Fibu-Einrichtung (Tab. 98)]({{ '/04-finance/fibu-einrichtung/' | relative_url }})
+ ├── [Kontenplan & Buchungsgruppen]({{ '/04-finance/kontenplan-buchungsgruppen/' | relative_url }})
+ ├── [MwSt-System]({{ '/04-finance/mwst-system/' | relative_url }})
+ ├─▶ Journale, Debitoren/Kreditoren  ← Sie sind hier
+ ├── [Bank, Anlagen & Währung]({{ '/04-finance/bank-anlagen-waehrung/' | relative_url }})
+ ├── [Berichte, Budget & Analyse]({{ '/04-finance/berichte-analyse-budget/' | relative_url }})
+ ├── [Konsolidierung, Abgrenzungen & IC]({{ '/04-finance/konsolidierung-abgrenzung-ic/' | relative_url }})
+ ├── [Querschnitt — Fibu-Relevanz aller Module]({{ '/04-finance/querschnitt/' | relative_url }})
+ └── [Entwickler-Referenz]({{ '/04-finance/entwickler/' | relative_url }})
+```
+
 ---
 
 ## 4.12 Fibu-Buchungsjournale
