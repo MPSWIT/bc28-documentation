@@ -3,6 +3,27 @@ title: "Finanzwesen"
 ---
 # 4. Finanzwesen — Übersicht
 
+<pre>
+4. Finanzwesen
+ │
+ ├─▶ Übersicht  ← Sie sind hier
+ │
+ ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}">Fibu-Einrichtung (Tab. 98)</a>
+ ├── <a href="{{ '/04-finance/kontenplan-buchungsgruppen/' | relative_url }}">Kontenplan &amp; Buchungsgruppen</a>
+ ├── <a href="{{ '/04-finance/mwst-system/' | relative_url }}">MwSt-System</a>
+ ├── <a href="{{ '/04-finance/journale-debitoren-kreditoren/' | relative_url }}">Journale, Debitoren/Kreditoren</a>
+ ├── <a href="{{ '/04-finance/bank-anlagen-waehrung/' | relative_url }}">Bank, Anlagen &amp; Währung</a>
+ ├── <a href="{{ '/04-finance/waehrungen/' | relative_url }}">Währungen &amp; Wechselkurse</a>
+ │    ├── <a href="{{ '/04-finance/waehrungen/einrichtung/' | relative_url }}">Einrichtung &amp; Setup</a>
+ │    ├── <a href="{{ '/04-finance/waehrungen/verarbeitung/' | relative_url }}">Verarbeitung &amp; Umrechnung</a>
+ │    ├── <a href="{{ '/04-finance/waehrungen/anwendung/' | relative_url }}">Anwendung &amp; Beispiele</a>
+ │    └── <a href="{{ '/04-finance/waehrungen/entwickler/' | relative_url }}">Entwickler-Referenz</a>
+ ├── <a href="{{ '/04-finance/berichte-analyse-budget/' | relative_url }}">Berichte, Budget &amp; Analyse</a>
+ ├── <a href="{{ '/04-finance/konsolidierung-abgrenzung-ic/' | relative_url }}">Konsolidierung, Abgrenzungen &amp; IC</a>
+ ├── <a href="{{ '/04-finance/querschnitt/' | relative_url }}">Querschnitt — Fibu-Relevanz aller Module</a>
+ └── <a href="{{ '/04-finance/entwickler/' | relative_url }}">Entwickler-Referenz</a>
+</pre>
+
 > **30 Namespaces · 32 Themen · 45+ Tabellen · ~75 User-Story-Beispiele**
 > Alle offiziellen BC28-de-AT Feldübersetzungen verwendet.
 

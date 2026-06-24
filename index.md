@@ -31,6 +31,11 @@ Business Central 28
  │
  ├── 4.  <a href="{{ '/04-finance/' | relative_url }}">Finanzwesen</a>
  │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}">Fibu-Einrichtung (Tab. 98)</a>
+ │    ├── <a href="{{ '/04-finance/waehrungen/' | relative_url }}">Währungen &amp; Wechselkurse</a>
+ │    │    ├── <a href="{{ '/04-finance/waehrungen/einrichtung/' | relative_url }}">Einrichtung &amp; Setup</a>
+ │    │    ├── <a href="{{ '/04-finance/waehrungen/verarbeitung/' | relative_url }}">Verarbeitung &amp; Umrechnung</a>
+ │    │    ├── <a href="{{ '/04-finance/waehrungen/anwendung/' | relative_url }}">Anwendung &amp; Beispiele</a>
+ │    │    └── <a href="{{ '/04-finance/waehrungen/entwickler/' | relative_url }}">Entwickler-Referenz</a>
  │    │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}#41-buchungszeiträume">4.1 Buchungszeiträume</a>
  │    │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}#42-dimensionen">4.2 Dimensionen</a>
  │    │    ├── <a href="{{ '/04-finance/fibu-einrichtung/' | relative_url }}#43-mehrwertsteuer">4.3 Mehrwertsteuer</a>
