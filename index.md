@@ -66,7 +66,12 @@ Business Central 28
  │    ├── <a href="{{ '/06-purchasing/anforderungen/' | relative_url }}">Anforderungen</a>
  │    └── <a href="{{ '/06-purchasing/entwickler/' | relative_url }}">Entwickler-Referenz</a>
  │
- ├── 7.  Lager &amp; Logistik  🚧
+ ├── 7.  <a href="{{ '/07-inventory/' | relative_url }}">Lager &amp; Logistik</a>
+ │    └── <a href="{{ '/07-inventory/intrastat/' | relative_url }}">Intrastat-Meldung</a>
+ │         ├── <a href="{{ '/07-inventory/intrastat/einrichtung/' | relative_url }}">Einrichtung &amp; Setup</a>
+ │         ├── <a href="{{ '/07-inventory/intrastat/verarbeitung/' | relative_url }}">Verarbeitung &amp; Hintergrund</a>
+ │         ├── <a href="{{ '/07-inventory/intrastat/export/' | relative_url }}">Export &amp; Hochladen</a>
+ │         └── <a href="{{ '/07-inventory/intrastat/entwickler/' | relative_url }}">Entwickler-Referenz</a>
  │
  ├── 8.  Produktion  🚧
  │
